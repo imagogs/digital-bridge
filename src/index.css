@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif:   "Playfair Display", ui-serif, Georgia, serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+
+  /* ── Brand accent ───────────────────────────────── */
+  --color-brand:        #6366f1;
+  --color-brand-light:  #818cf8;
+  --color-brand-dim:    rgba(99, 102, 241, 0.12);
+  --color-brand-glow:   rgba(99, 102, 241, 0.25);
+
+  /* ── Success / celebration ───────────────────── */
+  --color-success:      #34d399;   /* emerald-400 — completion, milestone */
+  --color-xp:           #f59e0b;   /* amber-400 — XP, rewards */
+  --color-streak:       #fb923c;   /* orange-400 — streak fire */
+
+  /* ── Surface hierarchy ──────────────────────────── */
+  --color-surface-0: #080808;   /* page background        */
+  --color-surface-1: #111111;   /* cards, panels          */
+  --color-surface-2: #191919;   /* elevated elements      */
+  --color-surface-3: #242424;   /* tooltips, dropdowns    */
+}
+
+/* ── Base ───────────────────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface-0);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* Noise texture — imperceptible consciously, felt subliminally */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.030;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ── Glass utilities ────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-panel-dark {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Brand glow ─────────────────────────────────────── */
+.brand-glow {
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3),
+              0 0 40px -10px rgba(99, 102, 241, 0.35);
+}
+
+/* ── Celebration card pulse ─────────────────────────── */
+@keyframes pulse-success {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  50%       { box-shadow: 0 0 20px -4px rgba(52, 211, 153, 0.25); }
+}
+
+.celebrate {
+  animation: pulse-success 2.4s ease-in-out infinite;
+}

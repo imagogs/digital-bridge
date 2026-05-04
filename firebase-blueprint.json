@@ -1,0 +1,57 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "User profile containing settings and assessment info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "level": { "type": "string", "enum": ["none", "beginner", "intermediate", "advanced"] },
+        "assessmentCompleted": { "type": "boolean" },
+        "createdAt": { "type": "number", "description": "Timestamp in milliseconds" },
+        "updatedAt": { "type": "number", "description": "Timestamp in milliseconds" }
+      },
+      "required": ["uid", "level", "assessmentCompleted", "createdAt", "updatedAt"]
+    },
+    "activityLog": {
+      "title": "ActivityLog",
+      "description": "A record of practiced time",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "topic": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "createdAt": { "type": "number", "description": "Timestamp in milliseconds" }
+      },
+      "required": ["userId", "topic", "durationMinutes", "createdAt"]
+    },
+    "certificate": {
+      "title": "Certificate",
+      "description": "A certificate earned by the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "topic": { "type": "string" },
+        "earnedAt": { "type": "number", "description": "Timestamp in milliseconds" }
+      },
+      "required": ["userId", "topic", "earnedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/userProfile" },
+      "description": "Stores user profiles"
+    },
+    "/users/{userId}/activity_logs/{logId}": {
+      "schema": { "$ref": "#/entities/activityLog" },
+      "description": "Stores practice sessions for a user"
+    },
+    "/users/{userId}/certificates/{certId}": {
+      "schema": { "$ref": "#/entities/certificate" },
+      "description": "Stores certificates earned by a user"
+    }
+  }
+}

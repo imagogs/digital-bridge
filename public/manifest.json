@@ -1,0 +1,37 @@
+{
+  "name": "DIGITAL BRIDGE",
+  "short_name": "DigiBridge",
+  "description": "Formazione digitale certificata per il lavoro in Italia",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "lang": "it",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Biblioteca Moduli",
+      "short_name": "Libreria",
+      "description": "Apri la libreria dei moduli formativi",
+      "url": "/?section=library",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "I miei Progressi",
+      "short_name": "Progressi",
+      "description": "Visualizza i tuoi badge e il progresso XP",
+      "url": "/?section=progress",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}

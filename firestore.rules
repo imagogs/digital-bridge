@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'level', 'assessmentCompleted', 'createdAt', 'updatedAt'])
+             && data.uid is string && data.uid.size() <= 128
+             && (data.keys().hasAll(['email']) ? (data.email is string && data.email.size() <= 256) : true)
+             && (data.keys().hasAll(['displayName']) ? (data.displayName is string && data.displayName.size() <= 128) : true)
+             && (data.keys().hasAll(['photoURL']) ? (data.photoURL is string && data.photoURL.size() <= 1024) : true)
+             && data.level in ['none', 'beginner', 'intermediate', 'advanced']
+             && data.assessmentCompleted is bool
+             && data.createdAt is number
+             && data.updatedAt is number;
+    }
+
+    function isValidActivityLog(data) {
+      return data.keys().hasOnly(['userId', 'topic', 'durationMinutes', 'createdAt'])
+             && data.userId is string && data.userId.size() <= 128
+             && data.topic is string && data.topic.size() <= 128
+             && data.durationMinutes is number
+             && data.createdAt is number;
+    }
+
+    function isValidCertificate(data) {
+      return data.keys().hasOnly(['userId', 'topic', 'earnedAt'])
+             && data.userId is string && data.userId.size() <= 128
+             && data.topic is string && data.topic.size() <= 128
+             && data.earnedAt is number;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId)
+                    && isValidUserProfile(incoming()) 
+                    && incoming().uid == request.auth.uid;
+
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId)
+                    && isValidUserProfile(incoming())
+                    && incoming().uid == existing().uid
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().diff(existing()).affectedKeys().hasOnly(['level', 'assessmentCompleted', 'updatedAt', 'displayName', 'photoURL', 'email']);
+
+      allow delete: if false;
+
+      match /activity_logs/{logId} {
+        allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(logId);
+        allow list: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && resource.data.userId == request.auth.uid;
+
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(logId)
+                      && isValidActivityLog(incoming())
+                      && incoming().userId == request.auth.uid
+                      && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if false;
+        allow delete: if false;
+      }
+
+      match /certificates/{certId} {
+        allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(certId);
+        allow list: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && resource.data.userId == request.auth.uid;
+
+        allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(certId)
+                      && isValidCertificate(incoming())
+                      && incoming().userId == request.auth.uid
+                      && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if false;
+        allow delete: if false;
+      }
+    }
+  }
+}
