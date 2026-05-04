@@ -4,6 +4,7 @@ import { getLessonsForModule } from '../data/lessonsManager';
 import { tools } from '../data/tools';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { AvatarDisplay } from './ProfileOverlay';
 
 // ── Responsive hook ──────────────────────────────────────────────────────────
 function useWindowWidth() {
@@ -69,28 +70,44 @@ const GROUPS: Group[] = [
 // ── Language toggle (light variant for cream bg) ─────────────────────────────
 function LightLangToggle() {
   const { lang, setLang } = useLanguage();
+
+  const handleClick = (l: 'it' | 'en') => (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLang(l);
+  };
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 3,
       background: '#fff', borderRadius: 999,
-      boxShadow: '0 2px 8px rgba(0,0,0,.07)', padding: 3,
+      boxShadow: '0 2px 8px rgba(0,0,0,.1)', padding: 3,
+      position: 'relative', zIndex: 10,
     }}>
-      {(['it', 'en'] as const).map(l => (
-        <button
-          key={l}
-          onClick={() => setLang(l)}
-          style={{
-            background: lang === l ? T.ink : 'transparent',
-            color: lang === l ? T.cream : T.inkDim,
-            padding: '5px 13px', borderRadius: 999, border: 'none',
-            fontFamily: T.mono, fontSize: 11, fontWeight: 600,
-            letterSpacing: '0.12em', cursor: 'pointer',
-            transition: 'all .18s', minHeight: 32,
-          }}
-        >
-          {l.toUpperCase()}
-        </button>
-      ))}
+      <button
+        type="button"
+        onClick={handleClick('it')}
+        style={{
+          background: lang === 'it' ? T.ink : 'transparent',
+          color: lang === 'it' ? T.cream : T.inkDim,
+          padding: '6px 14px', borderRadius: 999, border: 'none',
+          fontFamily: T.mono, fontSize: 11, fontWeight: 700,
+          letterSpacing: '0.12em', cursor: 'pointer',
+          transition: 'all .2s', minHeight: 36, minWidth: 40,
+        }}
+      >IT</button>
+      <button
+        type="button"
+        onClick={handleClick('en')}
+        style={{
+          background: lang === 'en' ? T.ink : 'transparent',
+          color: lang === 'en' ? T.cream : T.inkDim,
+          padding: '6px 14px', borderRadius: 999, border: 'none',
+          fontFamily: T.mono, fontSize: 11, fontWeight: 700,
+          letterSpacing: '0.12em', cursor: 'pointer',
+          transition: 'all .2s', minHeight: 36, minWidth: 40,
+        }}
+      >EN</button>
     </div>
   );
 }
@@ -574,11 +591,12 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
 }
 
 // ── Library Home ─────────────────────────────────────────────────────────────
-function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profile }: {
+function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profile, onOpenProfile }: {
   completedLessons: string[];
   earnedCertificates: string[];
   onOpenGroup: (g: Group) => void;
   profile: any;
+  onOpenProfile?: () => void;
 }) {
   const { t, lang } = useLanguage();
   const width = useWindowWidth();
@@ -631,23 +649,40 @@ function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profil
           DIGITAL BRIDGE
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{
-            padding: '7px 14px', background: '#fff', borderRadius: 999, fontSize: 12,
-            fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
-            display: 'flex', alignItems: 'center', gap: 6, color: T.ink,
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
-            {totalXP} XP
-          </div>
           {!isMobile && (
             <div style={{
-              width: 38, height: 38, borderRadius: '50%',
-              background: T.purple, color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 13, fontWeight: 700,
-              boxShadow: `0 4px 12px ${T.purple}55`,
-            }}>{initials || 'U'}</div>
+              padding: '7px 14px', background: '#fff', borderRadius: 999, fontSize: 12,
+              fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
+              display: 'flex', alignItems: 'center', gap: 6, color: T.ink,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
+              {totalXP} XP
+            </div>
           )}
+          {/* Avatar — always visible, clickable to open profile */}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            title="Profilo"
+            style={{
+              background: 'none', border: 'none', padding: 0,
+              cursor: onOpenProfile ? 'pointer' : 'default',
+              position: 'relative', flexShrink: 0,
+            }}
+          >
+            <AvatarDisplay
+              photoURL={profile?.photoURL}
+              displayName={profile?.displayName}
+              size={isMobile ? 36 : 42}
+            />
+            {onOpenProfile && (
+              <div style={{
+                position: 'absolute', bottom: -2, right: -2,
+                width: 14, height: 14, borderRadius: '50%',
+                background: T.purple, border: `2px solid ${T.bg}`,
+              }} />
+            )}
+          </button>
         </div>
       </div>
 
@@ -776,9 +811,10 @@ interface BibliotecaProps {
   completedLessons: string[];
   earnedCertificates: string[];
   onOpenModule: (id: string) => void;
+  onOpenProfile?: () => void;
 }
 
-export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule }: BibliotecaProps) {
+export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule, onOpenProfile }: BibliotecaProps) {
   const { profile } = useAuth();
   const [activeGroup, setActiveGroup] = useState<Group | null>(null);
   const [transitioning, setTransitioning] = useState(false);
@@ -824,6 +860,7 @@ export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule 
               earnedCertificates={earnedCertificates}
               onOpenGroup={openGroup}
               profile={profile}
+              onOpenProfile={onOpenProfile}
             />
           </motion.div>
         ) : (

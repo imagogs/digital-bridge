@@ -311,9 +311,8 @@ export default function App() {
             key="biblioteca"
             completedLessons={completedLessons}
             earnedCertificates={earnedCertificates}
-            onOpenModule={(id) => {
-              setSelectedToolId(id);
-            }}
+            onOpenModule={(id) => { setSelectedToolId(id); }}
+            onOpenProfile={() => setShowProfile(true)}
           />
         )}
 
