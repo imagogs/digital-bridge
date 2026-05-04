@@ -9,6 +9,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { LanguageToggle } from './components/LanguageToggle';
 import { HomeDashboard } from './components/HomeDashboard';
 import { ProgressScreen } from './components/ProgressScreen';
+import { Biblioteca } from './components/Biblioteca';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
 import { tools } from './data/tools';
@@ -282,63 +283,11 @@ export default function App() {
 
   // ── Main App ───────────────────────────────────────────────────────────────
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#0a0a0a]">
-
-      {/* 3D Library — only rendered when in library section or a module is open */}
-      {(currentSection === 'library' || selectedToolId) && (
-        <Suspense fallback={null}>
-          <Library3D
-            selectedToolId={currentSection === 'library' ? selectedToolId : null}
-            onSelectTool={(id) => {
-              setCurrentSection('library');
-              setSelectedToolId(id);
-            }}
-            section={currentSection}
-          />
-        </Suspense>
-      )}
-
-      {/* Dark veil when not in library section */}
-      <AnimatePresence>
-        {currentSection !== 'library' && (
-          <motion.div
-            key="section-veil"
-            className="absolute inset-0 z-[5] pointer-events-none"
-            style={{ background: 'rgba(5,5,5,0.88)' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          />
-        )}
-      </AnimatePresence>
+    <div className="relative w-full h-screen overflow-hidden"
+      style={{ background: currentSection === 'library' ? '#fbf6ec' : '#0a0a0a' }}>
 
       {/* Assessment overlay */}
       <AssessmentOverlay />
-
-      {/* Top bar — hidden while module is open */}
-      {!selectedToolId && (
-        <div className="absolute top-5 left-5 right-5 z-40 flex items-center justify-between">
-          <LanguageToggle />
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowCoordinator(true)}
-              className="p-2.5 bg-black/60 hover:bg-black/90 border border-white/10 rounded-xl text-white/50 hover:text-white transition-all"
-              title="Pannello Coordinatore"
-            >
-              <Users className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowProfile(true)}
-              className="p-2.5 bg-black/60 hover:bg-black/90 border border-white/10 rounded-xl text-white/50 hover:text-white transition-all"
-              title="Profilo"
-            >
-              {/* reuse user icon */}
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── Section screens ── */}
       <AnimatePresence mode="wait">
@@ -356,51 +305,16 @@ export default function App() {
           />
         )}
 
-        {/* LIBRARY — header overlay */}
+        {/* BIBLIOTECA */}
         {currentSection === 'library' && !selectedToolId && (
-          <motion.div
-            key="library-title"
-            className="absolute top-0 left-0 w-full pointer-events-none z-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            {/* Ambient top fade */}
-            <div className="absolute top-0 inset-x-0 h-44 bg-gradient-to-b from-black/70 via-black/30 to-transparent" />
-
-            <div className="relative flex flex-col items-center pt-14 gap-3">
-              {/* Pill tag */}
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-sm"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_2px_rgba(129,140,248,0.6)]" />
-                <span className="text-white/50 text-[10px] font-mono tracking-[0.28em] uppercase">
-                  {t('app.tagline')}
-                </span>
-              </motion.div>
-
-              {/* Gradient wordmark */}
-              <motion.h1
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.18, duration: 0.6 }}
-                className="font-serif text-5xl md:text-6xl font-semibold tracking-tight leading-none"
-                style={{
-                  background: 'linear-gradient(135deg, #ffffff 0%, #c7d2fe 50%, #818cf8 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  filter: 'drop-shadow(0 0 28px rgba(129,140,248,0.25))',
-                }}
-              >
-                DIGITAL BRIDGE
-              </motion.h1>
-            </div>
-          </motion.div>
+          <Biblioteca
+            key="biblioteca"
+            completedLessons={completedLessons}
+            earnedCertificates={earnedCertificates}
+            onOpenModule={(id) => {
+              setSelectedToolId(id);
+            }}
+          />
         )}
 
         {/* PROGRESS */}
@@ -423,19 +337,13 @@ export default function App() {
 
       </AnimatePresence>
 
-      {/* Library bottom hint */}
+      {/* Placeholder for removed library hint */}
       <AnimatePresence>
-        {currentSection === 'library' && !selectedToolId && (
+        {false && (
           <motion.p
-            key="library-hint"
-            className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10 pointer-events-none text-white/30 text-xs font-light tracking-[0.18em] uppercase whitespace-nowrap"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-          >
-            {t('app.subtitle')}
-          </motion.p>
+            key="library-hint-placeholder"
+            className="hidden"
+          ></motion.p>
         )}
       </AnimatePresence>
 
@@ -531,9 +439,14 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className="flex items-center gap-1 bg-[#111111]/95 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.7)]">
+          <div className={`flex items-center gap-1 rounded-2xl p-1.5 ${
+            currentSection === 'library'
+              ? 'bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_20px_rgba(29,25,51,0.12)]'
+              : 'bg-[#111111]/95 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.7)]'
+          }`}>
             {navItems.map(({ id, icon: Icon, label }) => {
               const isActive = currentSection === id;
+              const isLibrary = currentSection === 'library';
               return (
                 <button
                   key={id}
@@ -541,6 +454,8 @@ export default function App() {
                   className={`flex flex-col items-center gap-1 px-6 py-2.5 rounded-xl transition-all duration-200 cursor-pointer ${
                     isActive
                       ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/25'
+                      : isLibrary
+                      ? 'text-[#1d1933]/40 hover:text-[#1d1933] hover:bg-black/[0.05]'
                       : 'text-white/40 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >

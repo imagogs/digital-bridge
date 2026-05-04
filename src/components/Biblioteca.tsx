@@ -1,0 +1,834 @@
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { getLessonsForModule } from '../data/lessonsManager';
+import { tools } from '../data/tools';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+
+// ── Design tokens (matching the design file) ────────────────────────────────
+const T = {
+  bg: '#fbf6ec',
+  ink: '#1d1933',
+  inkDim: 'rgba(29,25,51,0.55)',
+  inkMute: 'rgba(29,25,51,0.35)',
+  cream: '#f4ecd9',
+  yellow: '#ffd166',
+  pink: '#ff8da3',
+  blue: '#5b8def',
+  green: '#5cc4a3',
+  purple: '#8b5cf6',
+  orange: '#ff9b6a',
+  serif: '"Fraunces", "Cormorant Garamond", Georgia, serif',
+  sans: '"Space Grotesk", "Inter", system-ui, sans-serif',
+  mono: '"DM Mono", "Fira Mono", monospace',
+};
+
+function hsl(hue: number, s = 72, l = 62) {
+  return `hsl(${hue}, ${s}%, ${l}%)`;
+}
+function hslSoft(hue: number) {
+  return `hsl(${hue}, 60%, 93%)`;
+}
+
+// ── Group data (mapped from real tools + vision groups) ─────────────────────
+interface Group {
+  id: string;
+  code: string;
+  title: string;
+  desc: string;
+  hue: number;
+  toolId: string | null; // null = coming soon
+  signature: string;
+  locked: boolean;
+}
+
+const GROUPS: Group[] = [
+  {
+    id: 'identita', code: 'G01', title: 'Identità Digitale',
+    desc: 'SPID, CIE e la chiave per accedere ai servizi pubblici online.',
+    hue: 248, toolId: 'spid', signature: 'shield', locked: false,
+  },
+  {
+    id: 'posta', code: 'G02', title: 'Posta & PEC',
+    desc: 'Email, allegati, PEC: comunicare in modo sicuro e ufficiale.',
+    hue: 218, toolId: 'pec', signature: 'envelope', locked: false,
+  },
+  {
+    id: 'comunicazione', code: 'G03', title: 'Comunicazione',
+    desc: 'Email moderne, videochiamate e messaggistica con familiari e operatori.',
+    hue: 168, toolId: 'email', signature: 'phone', locked: false,
+  },
+  {
+    id: 'office', code: 'G04', title: 'Scrivere & Office',
+    desc: 'Microsoft Word: formattare un CV, una lettera, un modulo.',
+    hue: 208, toolId: 'word', signature: 'page', locked: false,
+  },
+  {
+    id: 'fogli', code: 'G05', title: 'Fogli & Numeri',
+    desc: 'Excel di base: bilancio familiare, liste, somme automatiche.',
+    hue: 142, toolId: 'excel', signature: 'grid', locked: false,
+  },
+  {
+    id: 'pa', code: 'G06', title: 'Servizi PA',
+    desc: 'INPS, Agenzia Entrate, portali del Comune online.',
+    hue: 268, toolId: 'portali-pa', signature: 'columns', locked: false,
+  },
+  {
+    id: 'salute', code: 'G07', title: 'Salute Digitale',
+    desc: 'Fascicolo Sanitario, ricette elettroniche, prenotazioni online.',
+    hue: 12, toolId: null, signature: 'cross', locked: true,
+  },
+  {
+    id: 'pagamenti', code: 'G08', title: 'Pagamenti & Banca',
+    desc: 'pagoPA, home banking, bollettini e IO app.',
+    hue: 38, toolId: null, signature: 'piggy', locked: true,
+  },
+  {
+    id: 'sicurezza', code: 'G09', title: 'Sicurezza Online',
+    desc: 'Password sicure, truffe online, proteggere i tuoi dati.',
+    hue: 282, toolId: null, signature: 'lock', locked: true,
+  },
+  {
+    id: 'lavoro', code: 'G10', title: 'Lavoro Digitale',
+    desc: 'Lavoro da remoto, curriculum digitale, colloqui video.',
+    hue: 190, toolId: null, signature: 'briefcase', locked: true,
+  },
+];
+
+// ── SVG Room Illustrations ───────────────────────────────────────────────────
+function RoomIllustration({ group, size = 240 }: { group: Group; size?: number }) {
+  const accent = hsl(group.hue, 70, 58);
+  const accentLight = hsl(group.hue, 55, 78);
+  const accentBg = hsl(group.hue, 50, 92);
+  const bookColors = [
+    hsl(group.hue, 68, 52), hsl(group.hue + 30, 60, 60),
+    hsl(group.hue - 20, 72, 55), hsl(group.hue + 15, 55, 65),
+    hsl(group.hue - 40, 65, 50),
+  ];
+
+  return (
+    <svg width={size} height={size * 0.78} viewBox="0 0 240 187" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Room background */}
+      <rect width="240" height="187" rx="16" fill={accentBg} />
+      {/* Wall texture (subtle lines) */}
+      <line x1="0" y1="125" x2="240" y2="125" stroke={accentLight} strokeWidth="0.5" strokeOpacity="0.6" />
+      <line x1="0" y1="60" x2="240" y2="60" stroke={accentLight} strokeWidth="0.3" strokeOpacity="0.3" />
+
+      {/* Floor */}
+      <rect x="0" y="150" width="240" height="37" rx="0" fill={accentLight} fillOpacity="0.4" />
+      <rect x="0" y="149" width="240" height="2" fill={accentLight} fillOpacity="0.8" />
+
+      {/* Bookshelf */}
+      <rect x="20" y="90" width="120" height="58" rx="4" fill={T.ink} fillOpacity="0.06" />
+      <rect x="20" y="143" width="120" height="5" rx="2" fill={T.ink} fillOpacity="0.18" />
+      {/* Books on shelf */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const bw = [14, 18, 12, 16, 13, 17][i];
+        const bh = [50, 42, 54, 46, 52, 40][i];
+        const bx = 26 + [0, 16, 36, 50, 68, 83][i];
+        return (
+          <g key={i} className={`rm-book b${i + 1}`}>
+            <rect x={bx} y={143 - bh} width={bw} height={bh} rx="2" fill={bookColors[i % bookColors.length]} />
+            <rect x={bx} y={143 - bh} width={bw} height="4" rx="2" fill="rgba(255,255,255,0.3)" />
+            <rect x={bx + 2} y={143 - bh + 8} width={bw - 4} height="1.5" rx="1" fill="rgba(255,255,255,0.25)" />
+            <rect x={bx + 2} y={143 - bh + 12} width={bw - 6} height="1.5" rx="1" fill="rgba(255,255,255,0.2)" />
+          </g>
+        );
+      })}
+
+      {/* Signature object */}
+      <SignatureObject type={group.signature} accent={accent} x={160} y={90} />
+
+      {/* Lamp */}
+      <g className="rm-lamp-shade">
+        <rect x="192" y="30" width="24" height="18" rx="3" fill={T.yellow} fillOpacity="0.85" />
+        <rect x="203" y="48" width="2" height="20" fill={T.ink} fillOpacity="0.3" />
+        <ellipse cx="204" cy="70" rx="8" ry="3" fill={T.ink} fillOpacity="0.15" />
+        {/* Lamp glow */}
+        <ellipse cx="204" cy="50" rx="18" ry="12" fill={T.yellow} className="rm-lamp-glow" fillOpacity="0.15" />
+      </g>
+
+      {/* Plant */}
+      <g className="rm-plant">
+        <rect x="10" y="140" width="14" height="10" rx="3" fill={hsl(group.hue, 40, 45)} fillOpacity="0.6" />
+        <ellipse cx="17" cy="138" rx="10" ry="14" fill={T.green} fillOpacity="0.75" />
+        <ellipse cx="11" cy="132" rx="7" ry="10" fill={T.green} fillOpacity="0.6" />
+        <ellipse cx="23" cy="130" rx="8" ry="11" fill={T.green} fillOpacity="0.55" />
+      </g>
+
+      {/* Code tag bottom */}
+      <rect x="20" y="162" width="38" height="16" rx="8" fill={T.ink} fillOpacity="0.1" />
+      <text x="39" y="174" textAnchor="middle" fontFamily={T.mono} fontSize="9" fill={T.ink} fillOpacity="0.5">{group.code}</text>
+    </svg>
+  );
+}
+
+function SignatureObject({ type, accent, x, y }: { type: string; accent: string; x: number; y: number }) {
+  switch (type) {
+    case 'shield':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <path d="M20 5 L35 10 L35 26 Q35 36 20 42 Q5 36 5 26 L5 10 Z" fill={accent} fillOpacity="0.9" />
+          <path d="M14 22 L18 26 L26 18" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      );
+    case 'envelope':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="4" y="10" width="32" height="24" rx="4" fill={accent} fillOpacity="0.9" />
+          <path d="M4 14 L20 24 L36 14" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+          <rect x="12" y="30" width="16" height="2" rx="1" fill="white" fillOpacity="0.4" />
+        </g>
+      );
+    case 'phone':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="11" y="5" width="18" height="32" rx="4" fill={accent} fillOpacity="0.9" />
+          <rect x="14" y="10" width="12" height="18" rx="2" fill="white" fillOpacity="0.9" />
+          <circle cx="20" cy="33" r="2" fill="white" fillOpacity="0.6" />
+        </g>
+      );
+    case 'page':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="8" y="4" width="24" height="30" rx="3" fill={accent} fillOpacity="0.9" />
+          <rect x="12" y="10" width="16" height="2" rx="1" fill="white" fillOpacity="0.7" />
+          <rect x="12" y="15" width="12" height="2" rx="1" fill="white" fillOpacity="0.5" />
+          <rect x="12" y="20" width="14" height="2" rx="1" fill="white" fillOpacity="0.5" />
+          <rect x="12" y="25" width="10" height="2" rx="1" fill="white" fillOpacity="0.5" />
+          <path d="M26 4 L32 10 L26 10 Z" fill="white" fillOpacity="0.3" />
+        </g>
+      );
+    case 'grid':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="5" y="5" width="30" height="32" rx="4" fill={accent} fillOpacity="0.9" />
+          {[0, 1, 2].map(row => [0, 1, 2].map(col => (
+            <rect key={`${row}-${col}`} x={8 + col * 9} y={10 + row * 9} width="7" height="7" rx="1"
+              fill="white" fillOpacity={row === 0 ? 0.7 : 0.35} />
+          )))}
+        </g>
+      );
+    case 'columns':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="5" y="30" width="30" height="8" rx="2" fill={accent} fillOpacity="0.9" />
+          {[0, 1, 2].map(i => (
+            <rect key={i} x={8 + i * 10} y={12} width="8" height={18} rx="2" fill={accent} fillOpacity="0.7" />
+          ))}
+          <rect x="5" y="10" width="30" height="4" rx="2" fill={accent} fillOpacity="0.9" />
+        </g>
+      );
+    case 'cross':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="14" y="5" width="12" height="32" rx="4" fill={accent} fillOpacity="0.9" />
+          <rect x="5" y="14" width="30" height="12" rx="4" fill={accent} fillOpacity="0.9" />
+        </g>
+      );
+    case 'piggy':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <ellipse cx="20" cy="22" rx="14" ry="13" fill={accent} fillOpacity="0.9" />
+          <circle cx="27" cy="18" r="4" fill={accent} fillOpacity="0.7" />
+          <circle cx="16" cy="18" r="3" fill="white" fillOpacity="0.4" />
+          <rect x="16" y="8" width="8" height="3" rx="1.5" fill={accent} fillOpacity="0.7" />
+          <rect x="13" y="32" width="4" height="8" rx="2" fill={accent} fillOpacity="0.7" />
+          <rect x="23" y="32" width="4" height="8" rx="2" fill={accent} fillOpacity="0.7" />
+        </g>
+      );
+    case 'lock':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="8" y="18" width="24" height="20" rx="4" fill={accent} fillOpacity="0.9" />
+          <path d="M12 18 L12 12 Q12 4 20 4 Q28 4 28 12 L28 18" stroke={accent} strokeWidth="4" fill="none" strokeLinecap="round" fillOpacity="0.9" />
+          <circle cx="20" cy="27" r="3" fill="white" fillOpacity="0.7" />
+          <rect x="19" y="28" width="2" height="5" rx="1" fill="white" fillOpacity="0.5" />
+        </g>
+      );
+    case 'briefcase':
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <rect x="5" y="14" width="30" height="22" rx="4" fill={accent} fillOpacity="0.9" />
+          <path d="M14 14 L14 10 Q14 6 20 6 Q26 6 26 10 L26 14" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <rect x="5" y="22" width="30" height="3" rx="1" fill="white" fillOpacity="0.25" />
+          <rect x="17" y="20" width="6" height="7" rx="2" fill="white" fillOpacity="0.4" />
+        </g>
+      );
+    default:
+      return null;
+  }
+}
+
+// ── Stat Card ────────────────────────────────────────────────────────────────
+function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{
+      background: '#fff', borderRadius: 16, padding: '18px 22px',
+      boxShadow: '0 2px 8px rgba(29,25,51,.05)',
+      display: 'flex', flexDirection: 'column', gap: 4,
+    }}>
+      <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', color: T.inkMute }}>{label.toUpperCase()}</div>
+      <div style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 500, color: T.ink, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 4, background: color, display: 'inline-block', flexShrink: 0 }} />
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// ── Room Card ────────────────────────────────────────────────────────────────
+function RoomCard({ group, completedLessons, earnedCertificates, onClick }: {
+  group: Group;
+  completedLessons: string[];
+  earnedCertificates: string[];
+  onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const lessons = group.toolId ? getLessonsForModule(group.toolId, 'it') : [];
+  const done = lessons.filter(l => completedLessons.includes(l.id)).length;
+  const pct = lessons.length > 0 ? Math.round((done / lessons.length) * 100) : 0;
+  const certified = group.toolId ? earnedCertificates.includes(group.toolId) : false;
+  const accent = hsl(group.hue, 70, 58);
+  const accentSoft = hslSoft(group.hue);
+
+  return (
+    <motion.div
+      onClick={group.locked ? undefined : onClick}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      style={{
+        background: '#fff',
+        borderRadius: 20,
+        overflow: 'hidden',
+        cursor: group.locked ? 'default' : 'pointer',
+        boxShadow: hovered && !group.locked
+          ? '0 24px 48px rgba(29,25,51,.14), 0 8px 16px rgba(29,25,51,.06)'
+          : '0 4px 12px rgba(29,25,51,.05)',
+        transform: hovered && !group.locked ? 'translateY(-8px)' : 'translateY(0)',
+        transition: 'all 0.32s cubic-bezier(.2,.8,.3,1.2)',
+        opacity: group.locked ? 0.65 : 1,
+        position: 'relative',
+      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: group.locked ? 0.65 : 1, y: 0 }}
+      transition={{ delay: 0.05 * GROUPS.indexOf(group) }}
+    >
+      {/* Room illustration */}
+      <div style={{ position: 'relative', background: accentSoft }}>
+        <RoomIllustration group={group} size={280} />
+        {certified && (
+          <div style={{
+            position: 'absolute', top: 12, right: 12,
+            background: T.yellow, color: T.ink,
+            fontFamily: T.mono, fontSize: 9, fontWeight: 600,
+            letterSpacing: '0.15em', padding: '4px 10px', borderRadius: 999,
+            boxShadow: '0 2px 8px rgba(255,209,102,.5)',
+          }}>✦ CERTIFICATO</div>
+        )}
+        {group.locked && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(251,246,236,0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(2px)',
+          }}>
+            <div style={{
+              background: T.ink, color: T.cream, fontFamily: T.mono,
+              fontSize: 10, letterSpacing: '0.22em', padding: '8px 16px', borderRadius: 999,
+            }}>IN ARRIVO</div>
+          </div>
+        )}
+      </div>
+
+      {/* Card body */}
+      <div style={{ padding: '16px 20px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontFamily: T.mono, fontSize: 10, color: T.inkMute, letterSpacing: '0.2em' }}>
+            {group.code}
+          </span>
+          {!group.locked && pct > 0 && (
+            <span style={{ fontFamily: T.mono, fontSize: 10, color: accent }}>{pct}%</span>
+          )}
+        </div>
+        <h3 style={{ margin: 0, fontFamily: T.serif, fontSize: 20, fontWeight: 500, color: T.ink, lineHeight: 1.2 }}>
+          {group.title}
+        </h3>
+        <p style={{ margin: '6px 0 14px', fontFamily: T.sans, fontSize: 12, color: T.inkDim, lineHeight: 1.5 }}>
+          {group.desc}
+        </p>
+
+        {!group.locked && (
+          <div style={{ height: 4, background: '#f0ece2', borderRadius: 999, overflow: 'hidden' }}>
+            <motion.div
+              style={{ height: '100%', background: accent, borderRadius: 999 }}
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 1, delay: 0.3 }}
+            />
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Chip component ───────────────────────────────────────────────────────────
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      background: '#fff', borderRadius: 999, padding: '6px 14px',
+      fontFamily: T.sans, fontSize: 12, color: T.inkDim,
+      boxShadow: '0 1px 4px rgba(29,25,51,.07)',
+      display: 'inline-flex', alignItems: 'center',
+    }}>{children}</span>
+  );
+}
+
+// ── Group Screen ─────────────────────────────────────────────────────────────
+function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onOpenModule }: {
+  group: Group;
+  completedLessons: string[];
+  earnedCertificates: string[];
+  onClose: () => void;
+  onOpenModule: (id: string) => void;
+}) {
+  const tool = group.toolId ? tools.find(t => t.id === group.toolId) : null;
+  const lessons = group.toolId ? getLessonsForModule(group.toolId, 'it') : [];
+  const done = lessons.filter(l => completedLessons.includes(l.id)).length;
+  const pct = lessons.length > 0 ? Math.round((done / lessons.length) * 100) : 0;
+  const accent = hsl(group.hue, 70, 58);
+  const accentSoft = hslSoft(group.hue);
+  const certified = group.toolId ? earnedCertificates.includes(group.toolId) : false;
+  const totalXP = lessons.reduce((s, l) => s + l.xp, 0);
+  const earnedXP = lessons.filter(l => completedLessons.includes(l.id)).reduce((s, l) => s + l.xp, 0);
+
+  const nextLesson = lessons.find(l => !completedLessons.includes(l.id));
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 40 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -40 }}
+      transition={{ duration: 0.28 }}
+      style={{
+        minHeight: '100vh', background: T.bg, color: T.ink,
+        fontFamily: T.sans, paddingBottom: 120, overflowY: 'auto',
+      }}
+    >
+      {/* Top nav */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 40px' }}>
+        <button
+          onClick={onClose}
+          style={{
+            background: '#fff', border: 'none',
+            padding: '10px 20px', borderRadius: 999,
+            fontFamily: T.sans, fontSize: 13, fontWeight: 500,
+            cursor: 'pointer', boxShadow: '0 2px 8px rgba(29,25,51,.08)',
+            color: T.ink, display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+          ← Biblioteca
+        </button>
+        <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim }}>
+          STANZA {group.code}
+        </div>
+        <div style={{ width: 100 }} />
+      </div>
+
+      <div style={{ padding: '0 40px', maxWidth: 1200, margin: '0 auto' }}>
+        {/* Hero card */}
+        <div style={{
+          background: accentSoft, borderRadius: 24,
+          padding: '36px 40px', marginBottom: 20,
+          display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'center',
+          position: 'relative', overflow: 'hidden',
+        }}>
+          <div style={{ position: 'absolute', right: -60, top: -60, width: 200, height: 200, borderRadius: '50%', background: accent, opacity: 0.08 }} />
+          <div>
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim, marginBottom: 12 }}>
+              ● STANZA {group.code.replace('G', '')} · PERCORSO BASE
+            </div>
+            <h1 style={{ margin: 0, fontFamily: T.serif, fontSize: 56, fontWeight: 500, lineHeight: 1.0, letterSpacing: '-0.02em' }}>
+              {group.title}
+            </h1>
+            <p style={{ marginTop: 14, marginBottom: 0, fontSize: 15, lineHeight: 1.6, color: T.inkDim, maxWidth: 500 }}>
+              {group.desc}
+            </p>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+              <Chip>📚 {lessons.length} lezioni</Chip>
+              <Chip>✦ {totalXP} XP totali</Chip>
+              {certified && <Chip>🏆 Certificato ottenuto</Chip>}
+            </div>
+          </div>
+          <RoomIllustration group={group} size={200} />
+        </div>
+
+        {/* Stats row */}
+        <div style={{
+          background: '#fff', borderRadius: 18, padding: '20px 28px', marginBottom: 20,
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(29,25,51,.05)',
+        }}>
+          {[
+            { label: 'Lezioni completate', value: `${done}/${lessons.length}` },
+            { label: 'XP guadagnati', value: `${earnedXP} XP` },
+            { label: 'Avanzamento', value: `${pct}%` },
+          ].map(s => (
+            <div key={s.label}>
+              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.18em', color: T.inkMute, marginBottom: 4 }}>{s.label.toUpperCase()}</div>
+              <div style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 500 }}>{s.value}</div>
+            </div>
+          ))}
+          <div>
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.18em', color: T.inkMute, marginBottom: 8 }}>PROGRESSIONE</div>
+            <div style={{ height: 8, background: '#f0ece2', borderRadius: 999, overflow: 'hidden' }}>
+              <motion.div
+                style={{ height: '100%', background: accent, borderRadius: 999 }}
+                initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                transition={{ duration: 1 }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Continue CTA */}
+        {tool && nextLesson && (
+          <div style={{
+            background: T.ink, color: T.cream,
+            borderRadius: 18, padding: '22px 28px', marginBottom: 28,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24,
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', right: -20, top: -30, width: 120, height: 120, borderRadius: '50%', background: T.yellow, opacity: 0.12 }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', opacity: 0.6, marginBottom: 8 }}>
+                {done === 0 ? 'INIZIA CON' : 'CONTINUA DA'}
+              </div>
+              <div style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 500 }}>{nextLesson.title}</div>
+              <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
+                {nextLesson.duration} · +{nextLesson.xp} XP
+              </div>
+            </div>
+            <button
+              onClick={() => onOpenModule(tool.id)}
+              style={{
+                background: T.yellow, color: T.ink, border: 'none',
+                padding: '14px 24px', borderRadius: 999,
+                fontFamily: T.sans, fontSize: 14, fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+                boxShadow: `0 6px 20px ${T.yellow}88`, flexShrink: 0,
+              }}>▶ {done === 0 ? 'Inizia' : 'Riprendi'}</button>
+          </div>
+        )}
+
+        {/* Lessons list */}
+        {lessons.length > 0 && (
+          <div>
+            <h2 style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 500, margin: '0 0 16px', color: T.ink }}>
+              Lezioni
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {lessons.map((lesson, idx) => {
+                const isCompleted = completedLessons.includes(lesson.id);
+                const isCurrent = !isCompleted && idx === done;
+                return (
+                  <motion.div
+                    key={lesson.id}
+                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.04 }}
+                    onClick={tool && (isCompleted || isCurrent) ? () => onOpenModule(tool.id) : undefined}
+                    style={{
+                      background: '#fff', borderRadius: 14, padding: '16px 20px',
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      boxShadow: '0 1px 4px rgba(29,25,51,.05)',
+                      cursor: tool && (isCompleted || isCurrent) ? 'pointer' : 'default',
+                      opacity: idx > done + 2 ? 0.5 : 1,
+                      transition: 'box-shadow .2s',
+                    }}
+                  >
+                    {/* Status dot */}
+                    <div style={{
+                      width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                      background: isCompleted ? T.green : isCurrent ? accent : '#f0ece2',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 14,
+                    }}>
+                      {isCompleted ? '✓' : isCurrent ? '▶' : String(idx + 1).padStart(2, '0')}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 500, fontSize: 14, color: T.ink, marginBottom: 2 }}>{lesson.title}</div>
+                      <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkMute }}>{lesson.duration} · +{lesson.xp} XP</div>
+                    </div>
+                    {isCompleted && (
+                      <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: T.green, background: `${T.green}20`, padding: '4px 10px', borderRadius: 999 }}>COMPLETATA</span>
+                    )}
+                    {isCurrent && (
+                      <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: accent, background: `${accent}20`, padding: '4px 10px', borderRadius: 999 }}>PROSSIMA</span>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Library Home ─────────────────────────────────────────────────────────────
+function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profile }: {
+  completedLessons: string[];
+  earnedCertificates: string[];
+  onOpenGroup: (g: Group) => void;
+  profile: any;
+}) {
+  const totalLessons = GROUPS.filter(g => g.toolId).reduce((s, g) => {
+    return s + getLessonsForModule(g.toolId!, 'it').length;
+  }, 0);
+  const totalCompleted = completedLessons.length;
+  const totalXP = GROUPS.filter(g => g.toolId).reduce((s, g) => {
+    const ls = getLessonsForModule(g.toolId!, 'it');
+    return s + ls.filter(l => completedLessons.includes(l.id)).reduce((a, l) => a + l.xp, 0);
+  }, 0);
+  const groupsDone = GROUPS.filter(g => {
+    if (!g.toolId) return false;
+    const ls = getLessonsForModule(g.toolId, 'it');
+    return ls.length > 0 && ls.every(l => completedLessons.includes(l.id));
+  }).length;
+
+  const firstName = (profile?.displayName || 'Caro utente').split(' ')[0];
+  const inProgress = GROUPS.find(g => {
+    if (!g.toolId) return false;
+    const ls = getLessonsForModule(g.toolId, 'it');
+    const d = ls.filter(l => completedLessons.includes(l.id)).length;
+    return d > 0 && d < ls.length;
+  });
+  const nextGroup = inProgress || GROUPS.find(g => {
+    if (!g.toolId) return false;
+    const ls = getLessonsForModule(g.toolId, 'it');
+    return !ls.some(l => completedLessons.includes(l.id));
+  });
+  const nextLesson = nextGroup?.toolId
+    ? getLessonsForModule(nextGroup.toolId, 'it').find(l => !completedLessons.includes(l.id))
+    : null;
+  const initials = (profile?.displayName || 'U')
+    .split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('');
+
+  return (
+    <div style={{
+      minHeight: '100vh', background: T.bg, color: T.ink,
+      fontFamily: T.sans, paddingBottom: 100,
+      backgroundImage: `radial-gradient(circle at 6% 0%, ${T.yellow}28 0%, transparent 32%), radial-gradient(circle at 94% 16%, ${T.pink}18 0%, transparent 36%)`,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 40px' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: '#fff', borderRadius: 999, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
+          padding: 4,
+        }}>
+          <span style={{ background: T.ink, color: T.cream, padding: '6px 14px', borderRadius: 999, fontSize: 11, fontWeight: 600, letterSpacing: '.12em' }}>IT</span>
+          <span style={{ padding: '6px 10px', fontSize: 11, color: T.inkDim }}>EN</span>
+        </div>
+        <div style={{ fontFamily: T.serif, fontWeight: 600, fontSize: 18, letterSpacing: '0.18em', color: T.ink }}>
+          DIGITAL BRIDGE
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{
+            padding: '8px 16px', background: '#fff', borderRadius: 999, fontSize: 12,
+            fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
+            display: 'flex', alignItems: 'center', gap: 8, color: T.ink,
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
+            {totalXP} XP
+          </div>
+          <div style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: T.purple, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700,
+            boxShadow: `0 4px 12px ${T.purple}55`,
+          }}>{initials || 'U'}</div>
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div style={{ padding: '32px 40px 24px', maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 4, background: T.pink }} />
+          <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.22em', color: T.inkDim }}>
+            CIAO {firstName.toUpperCase()}, {totalCompleted === 0 ? 'BENVENUTO' : 'BENTORNATO'}
+          </span>
+        </div>
+        <h1 style={{
+          margin: '0 0 32px', fontFamily: T.serif,
+          fontSize: 'clamp(52px, 6vw, 80px)', fontWeight: 500,
+          lineHeight: 1.0, letterSpacing: '-0.02em', maxWidth: 860,
+        }}>
+          Scegli una{' '}
+          <span style={{
+            background: T.yellow, padding: '2px 14px', borderRadius: 10,
+            display: 'inline-block', transform: 'rotate(-1.2deg)',
+          }}>stanza</span>{' '}e
+          <br />inizia ad <em style={{ fontFamily: T.serif, fontStyle: 'italic', color: T.purple }}>esplorare</em>.
+        </h1>
+
+        {/* Stats row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 14, marginBottom: 48 }}>
+          {/* Continue card */}
+          {nextGroup && nextLesson ? (
+            <div
+              onClick={() => onOpenGroup(nextGroup)}
+              style={{
+                background: T.ink, color: T.cream, padding: '22px 26px',
+                borderRadius: 20, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+                position: 'relative', overflow: 'hidden',
+                boxShadow: '0 8px 24px rgba(29,25,51,.18)',
+              }}>
+              <div style={{ position: 'absolute', right: -40, top: -40, width: 140, height: 140, borderRadius: '50%', background: T.yellow, opacity: 0.12 }} />
+              <div style={{ position: 'relative', minWidth: 0 }}>
+                <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', opacity: 0.6, marginBottom: 4 }}>
+                  {inProgress ? 'RIPRENDI DA' : 'INIZIA CON'}
+                </div>
+                <div style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {nextLesson.title}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
+                  {nextGroup.title} · {nextLesson.duration} · +{nextLesson.xp} XP
+                </div>
+              </div>
+              <button style={{
+                background: T.yellow, color: T.ink, border: 'none',
+                padding: '12px 20px', borderRadius: 999,
+                fontFamily: T.sans, fontWeight: 700, fontSize: 13,
+                cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                boxShadow: `0 4px 12px ${T.yellow}66`,
+              }}>▶ Continua</button>
+            </div>
+          ) : (
+            <div style={{
+              background: T.ink, color: T.cream, padding: '22px 26px', borderRadius: 20,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 500 }}>🏆 Completo!</div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>Hai esplorato tutto il percorso base</div>
+              </div>
+            </div>
+          )}
+          <StatCard label="Stanze esplorate" value={`${groupsDone}/10`} color={T.blue} />
+          <StatCard label="XP guadagnati" value={`${totalXP}`} color={T.green} />
+          <StatCard label="Certificati" value={`${earnedCertificates.length}/6`} color={T.yellow} />
+        </div>
+
+        {/* Grid of rooms */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
+          {GROUPS.map(group => (
+            <RoomCard
+              key={group.id}
+              group={group}
+              completedLessons={completedLessons}
+              earnedCertificates={earnedCertificates}
+              onClick={() => onOpenGroup(group)}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CSS for room hover animations ────────────────────────────────────────────
+const ROOM_STYLES = `
+  @keyframes rm-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+  .rm-book { transition: transform 0.4s cubic-bezier(.3,.8,.3,1.3); }
+  .rm-card:hover .rm-book.b1 { transform: translateY(-8px) rotate(-2deg); }
+  .rm-card:hover .rm-book.b2 { transform: translateY(-4px); }
+  .rm-card:hover .rm-book.b3 { transform: translateY(-10px) rotate(1.5deg); }
+  .rm-card:hover .rm-book.b4 { transform: translateY(-3px); }
+  .rm-card:hover .rm-book.b5 { transform: translateY(-7px) rotate(-1.5deg); }
+  .rm-card:hover .rm-book.b6 { transform: translateY(-5px) rotate(2deg); }
+  .rm-plant { transform-origin: bottom center; transition: transform 0.5s; }
+  .rm-card:hover .rm-plant { transform: rotate(-3deg); }
+  .rm-lamp-glow { transition: opacity 0.4s; opacity: 0.1; }
+  .rm-card:hover .rm-lamp-glow { opacity: 0.5 !important; }
+`;
+
+// ── Main Biblioteca component ─────────────────────────────────────────────────
+interface BibliotecaProps {
+  completedLessons: string[];
+  earnedCertificates: string[];
+  onOpenModule: (id: string) => void;
+}
+
+export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule }: BibliotecaProps) {
+  const { profile } = useAuth();
+  const [activeGroup, setActiveGroup] = useState<Group | null>(null);
+  const [transitioning, setTransitioning] = useState(false);
+
+  // Inject room animation styles once
+  useMemo(() => {
+    if (typeof document !== 'undefined' && !document.getElementById('biblioteca-room-styles')) {
+      const s = document.createElement('style');
+      s.id = 'biblioteca-room-styles';
+      s.textContent = ROOM_STYLES;
+      document.head.appendChild(s);
+    }
+  }, []);
+
+  const openGroup = (g: Group) => {
+    setTransitioning(true);
+    setTimeout(() => { setActiveGroup(g); setTransitioning(false); }, 200);
+  };
+  const closeGroup = () => {
+    setTransitioning(true);
+    setTimeout(() => { setActiveGroup(null); setTransitioning(false); }, 200);
+  };
+
+  return (
+    <motion.div
+      className="absolute inset-0 z-10 overflow-y-auto"
+      style={{ background: T.bg }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.35 }}
+    >
+      <AnimatePresence mode="wait">
+        {!activeGroup ? (
+          <motion.div
+            key="library-home"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: transitioning ? 0 : 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <LibraryHome
+              completedLessons={completedLessons}
+              earnedCertificates={earnedCertificates}
+              onOpenGroup={openGroup}
+              profile={profile}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key={`group-${activeGroup.id}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: transitioning ? 0 : 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <GroupScreen
+              group={activeGroup}
+              completedLessons={completedLessons}
+              earnedCertificates={earnedCertificates}
+              onClose={closeGroup}
+              onOpenModule={onOpenModule}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
