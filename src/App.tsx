@@ -430,7 +430,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Bottom navigation bar */}
+      {/* Bottom navigation bar — always includes IT/EN toggle */}
       {!selectedToolId && (
         <motion.div
           className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
@@ -443,14 +443,16 @@ export default function App() {
               ? 'bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_20px_rgba(29,25,51,0.12)]'
               : 'bg-[#111111]/95 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.7)]'
           }`}>
+            {/* Section tabs */}
             {navItems.map(({ id, icon: Icon, label }) => {
               const isActive = currentSection === id;
               const isLibrary = currentSection === 'library';
               return (
                 <button
                   key={id}
+                  type="button"
                   onClick={() => setCurrentSection(id)}
-                  className={`flex flex-col items-center gap-1 px-6 py-2.5 rounded-xl transition-all duration-200 cursor-pointer ${
+                  className={`flex flex-col items-center gap-1 px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer ${
                     isActive
                       ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/25'
                       : isLibrary
@@ -463,6 +465,31 @@ export default function App() {
                 </button>
               );
             })}
+
+            {/* Divider */}
+            <div className={`w-px h-7 mx-1 rounded-full ${
+              currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
+            }`} />
+
+            {/* Language toggle — always visible */}
+            {(['it', 'en'] as const).map(l => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                className={`px-3 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all duration-200 cursor-pointer ${
+                  lang === l
+                    ? currentSection === 'library'
+                      ? 'bg-[#1d1933] text-white shadow-sm'
+                      : 'bg-white text-black shadow-sm'
+                    : currentSection === 'library'
+                    ? 'text-[#1d1933]/35 hover:text-[#1d1933] hover:bg-black/[0.05]'
+                    : 'text-white/35 hover:text-white hover:bg-white/[0.06]'
+                }`}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
           </div>
         </motion.div>
       )}

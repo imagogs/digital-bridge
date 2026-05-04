@@ -67,51 +67,6 @@ const GROUPS: Group[] = [
   { id: 'lavoro',       code: 'G10', titleKey: 'lib.g10.title', descKey: 'lib.g10.desc', hue: 190, toolId: null,          signature: 'briefcase', locked: true  },
 ];
 
-// ── Language toggle (light variant for cream bg) ─────────────────────────────
-function LightLangToggle() {
-  const { lang, setLang } = useLanguage();
-
-  const handleClick = (l: 'it' | 'en') => (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setLang(l);
-  };
-
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 3,
-      background: '#fff', borderRadius: 999,
-      boxShadow: '0 2px 8px rgba(0,0,0,.1)', padding: 3,
-      position: 'relative', zIndex: 10,
-    }}>
-      <button
-        type="button"
-        onClick={handleClick('it')}
-        style={{
-          background: lang === 'it' ? T.ink : 'transparent',
-          color: lang === 'it' ? T.cream : T.inkDim,
-          padding: '6px 14px', borderRadius: 999, border: 'none',
-          fontFamily: T.mono, fontSize: 11, fontWeight: 700,
-          letterSpacing: '0.12em', cursor: 'pointer',
-          transition: 'all .2s', minHeight: 36, minWidth: 40,
-        }}
-      >IT</button>
-      <button
-        type="button"
-        onClick={handleClick('en')}
-        style={{
-          background: lang === 'en' ? T.ink : 'transparent',
-          color: lang === 'en' ? T.cream : T.inkDim,
-          padding: '6px 14px', borderRadius: 999, border: 'none',
-          fontFamily: T.mono, fontSize: 11, fontWeight: 700,
-          letterSpacing: '0.12em', cursor: 'pointer',
-          transition: 'all .2s', minHeight: 36, minWidth: 40,
-        }}
-      >EN</button>
-    </div>
-  );
-}
-
 // ── SVG Room Illustrations ───────────────────────────────────────────────────
 function RoomIllustration({ group, size = 240 }: { group: Group; size?: number }) {
   const accent = hsl(group.hue, 70, 58);
@@ -644,7 +599,6 @@ function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profil
     }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: headerPad, gap: 12 }}>
-        <LightLangToggle />
         <div style={{ fontFamily: T.serif, fontWeight: 600, fontSize: isMobile ? 15 : 18, letterSpacing: '0.18em', color: T.ink }}>
           DIGITAL BRIDGE
         </div>
