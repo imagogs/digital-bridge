@@ -1,11 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getLessonsForModule } from '../data/lessonsManager';
 import { tools } from '../data/tools';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 
-// ── Design tokens (matching the design file) ────────────────────────────────
+// ── Responsive hook ──────────────────────────────────────────────────────────
+function useWindowWidth() {
+  const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  useEffect(() => {
+    const fn = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return width;
+}
+
+// ── Design tokens ────────────────────────────────────────────────────────────
 const T = {
   bg: '#fbf6ec',
   ink: '#1d1933',
@@ -30,70 +41,59 @@ function hslSoft(hue: number) {
   return `hsl(${hue}, 60%, 93%)`;
 }
 
-// ── Group data (mapped from real tools + vision groups) ─────────────────────
+// ── Group data ───────────────────────────────────────────────────────────────
 interface Group {
   id: string;
   code: string;
-  title: string;
-  desc: string;
+  titleKey: string;
+  descKey: string;
   hue: number;
-  toolId: string | null; // null = coming soon
+  toolId: string | null;
   signature: string;
   locked: boolean;
 }
 
 const GROUPS: Group[] = [
-  {
-    id: 'identita', code: 'G01', title: 'Identità Digitale',
-    desc: 'SPID, CIE e la chiave per accedere ai servizi pubblici online.',
-    hue: 248, toolId: 'spid', signature: 'shield', locked: false,
-  },
-  {
-    id: 'posta', code: 'G02', title: 'Posta & PEC',
-    desc: 'Email, allegati, PEC: comunicare in modo sicuro e ufficiale.',
-    hue: 218, toolId: 'pec', signature: 'envelope', locked: false,
-  },
-  {
-    id: 'comunicazione', code: 'G03', title: 'Comunicazione',
-    desc: 'Email moderne, videochiamate e messaggistica con familiari e operatori.',
-    hue: 168, toolId: 'email', signature: 'phone', locked: false,
-  },
-  {
-    id: 'office', code: 'G04', title: 'Scrivere & Office',
-    desc: 'Microsoft Word: formattare un CV, una lettera, un modulo.',
-    hue: 208, toolId: 'word', signature: 'page', locked: false,
-  },
-  {
-    id: 'fogli', code: 'G05', title: 'Fogli & Numeri',
-    desc: 'Excel di base: bilancio familiare, liste, somme automatiche.',
-    hue: 142, toolId: 'excel', signature: 'grid', locked: false,
-  },
-  {
-    id: 'pa', code: 'G06', title: 'Servizi PA',
-    desc: 'INPS, Agenzia Entrate, portali del Comune online.',
-    hue: 268, toolId: 'portali-pa', signature: 'columns', locked: false,
-  },
-  {
-    id: 'salute', code: 'G07', title: 'Salute Digitale',
-    desc: 'Fascicolo Sanitario, ricette elettroniche, prenotazioni online.',
-    hue: 12, toolId: null, signature: 'cross', locked: true,
-  },
-  {
-    id: 'pagamenti', code: 'G08', title: 'Pagamenti & Banca',
-    desc: 'pagoPA, home banking, bollettini e IO app.',
-    hue: 38, toolId: null, signature: 'piggy', locked: true,
-  },
-  {
-    id: 'sicurezza', code: 'G09', title: 'Sicurezza Online',
-    desc: 'Password sicure, truffe online, proteggere i tuoi dati.',
-    hue: 282, toolId: null, signature: 'lock', locked: true,
-  },
-  {
-    id: 'lavoro', code: 'G10', title: 'Lavoro Digitale',
-    desc: 'Lavoro da remoto, curriculum digitale, colloqui video.',
-    hue: 190, toolId: null, signature: 'briefcase', locked: true,
-  },
+  { id: 'identita',     code: 'G01', titleKey: 'lib.g01.title', descKey: 'lib.g01.desc', hue: 248, toolId: 'spid',        signature: 'shield',    locked: false },
+  { id: 'posta',        code: 'G02', titleKey: 'lib.g02.title', descKey: 'lib.g02.desc', hue: 218, toolId: 'pec',         signature: 'envelope',  locked: false },
+  { id: 'comunicazione',code: 'G03', titleKey: 'lib.g03.title', descKey: 'lib.g03.desc', hue: 168, toolId: 'email',       signature: 'phone',     locked: false },
+  { id: 'office',       code: 'G04', titleKey: 'lib.g04.title', descKey: 'lib.g04.desc', hue: 208, toolId: 'word',        signature: 'page',      locked: false },
+  { id: 'fogli',        code: 'G05', titleKey: 'lib.g05.title', descKey: 'lib.g05.desc', hue: 142, toolId: 'excel',       signature: 'grid',      locked: false },
+  { id: 'pa',           code: 'G06', titleKey: 'lib.g06.title', descKey: 'lib.g06.desc', hue: 268, toolId: 'portali-pa', signature: 'columns',   locked: false },
+  { id: 'salute',       code: 'G07', titleKey: 'lib.g07.title', descKey: 'lib.g07.desc', hue: 12,  toolId: null,          signature: 'cross',     locked: true  },
+  { id: 'pagamenti',    code: 'G08', titleKey: 'lib.g08.title', descKey: 'lib.g08.desc', hue: 38,  toolId: null,          signature: 'piggy',     locked: true  },
+  { id: 'sicurezza',    code: 'G09', titleKey: 'lib.g09.title', descKey: 'lib.g09.desc', hue: 282, toolId: null,          signature: 'lock',      locked: true  },
+  { id: 'lavoro',       code: 'G10', titleKey: 'lib.g10.title', descKey: 'lib.g10.desc', hue: 190, toolId: null,          signature: 'briefcase', locked: true  },
 ];
+
+// ── Language toggle (light variant for cream bg) ─────────────────────────────
+function LightLangToggle() {
+  const { lang, setLang } = useLanguage();
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 3,
+      background: '#fff', borderRadius: 999,
+      boxShadow: '0 2px 8px rgba(0,0,0,.07)', padding: 3,
+    }}>
+      {(['it', 'en'] as const).map(l => (
+        <button
+          key={l}
+          onClick={() => setLang(l)}
+          style={{
+            background: lang === l ? T.ink : 'transparent',
+            color: lang === l ? T.cream : T.inkDim,
+            padding: '5px 13px', borderRadius: 999, border: 'none',
+            fontFamily: T.mono, fontSize: 11, fontWeight: 600,
+            letterSpacing: '0.12em', cursor: 'pointer',
+            transition: 'all .18s', minHeight: 32,
+          }}
+        >
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 // ── SVG Room Illustrations ───────────────────────────────────────────────────
 function RoomIllustration({ group, size = 240 }: { group: Group; size?: number }) {
@@ -105,23 +105,15 @@ function RoomIllustration({ group, size = 240 }: { group: Group; size?: number }
     hsl(group.hue - 20, 72, 55), hsl(group.hue + 15, 55, 65),
     hsl(group.hue - 40, 65, 50),
   ];
-
   return (
     <svg width={size} height={size * 0.78} viewBox="0 0 240 187" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Room background */}
       <rect width="240" height="187" rx="16" fill={accentBg} />
-      {/* Wall texture (subtle lines) */}
       <line x1="0" y1="125" x2="240" y2="125" stroke={accentLight} strokeWidth="0.5" strokeOpacity="0.6" />
       <line x1="0" y1="60" x2="240" y2="60" stroke={accentLight} strokeWidth="0.3" strokeOpacity="0.3" />
-
-      {/* Floor */}
-      <rect x="0" y="150" width="240" height="37" rx="0" fill={accentLight} fillOpacity="0.4" />
+      <rect x="0" y="150" width="240" height="37" fill={accentLight} fillOpacity="0.4" />
       <rect x="0" y="149" width="240" height="2" fill={accentLight} fillOpacity="0.8" />
-
-      {/* Bookshelf */}
       <rect x="20" y="90" width="120" height="58" rx="4" fill={T.ink} fillOpacity="0.06" />
       <rect x="20" y="143" width="120" height="5" rx="2" fill={T.ink} fillOpacity="0.18" />
-      {/* Books on shelf */}
       {[0, 1, 2, 3, 4, 5].map((i) => {
         const bw = [14, 18, 12, 16, 13, 17][i];
         const bh = [50, 42, 54, 46, 52, 40][i];
@@ -135,28 +127,19 @@ function RoomIllustration({ group, size = 240 }: { group: Group; size?: number }
           </g>
         );
       })}
-
-      {/* Signature object */}
       <SignatureObject type={group.signature} accent={accent} x={160} y={90} />
-
-      {/* Lamp */}
       <g className="rm-lamp-shade">
         <rect x="192" y="30" width="24" height="18" rx="3" fill={T.yellow} fillOpacity="0.85" />
         <rect x="203" y="48" width="2" height="20" fill={T.ink} fillOpacity="0.3" />
         <ellipse cx="204" cy="70" rx="8" ry="3" fill={T.ink} fillOpacity="0.15" />
-        {/* Lamp glow */}
         <ellipse cx="204" cy="50" rx="18" ry="12" fill={T.yellow} className="rm-lamp-glow" fillOpacity="0.15" />
       </g>
-
-      {/* Plant */}
       <g className="rm-plant">
         <rect x="10" y="140" width="14" height="10" rx="3" fill={hsl(group.hue, 40, 45)} fillOpacity="0.6" />
         <ellipse cx="17" cy="138" rx="10" ry="14" fill={T.green} fillOpacity="0.75" />
         <ellipse cx="11" cy="132" rx="7" ry="10" fill={T.green} fillOpacity="0.6" />
         <ellipse cx="23" cy="130" rx="8" ry="11" fill={T.green} fillOpacity="0.55" />
       </g>
-
-      {/* Code tag bottom */}
       <rect x="20" y="162" width="38" height="16" rx="8" fill={T.ink} fillOpacity="0.1" />
       <text x="39" y="174" textAnchor="middle" fontFamily={T.mono} fontSize="9" fill={T.ink} fillOpacity="0.5">{group.code}</text>
     </svg>
@@ -264,13 +247,13 @@ function SignatureObject({ type, accent, x, y }: { type: string; accent: string;
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div style={{
-      background: '#fff', borderRadius: 16, padding: '18px 22px',
+      background: '#fff', borderRadius: 16, padding: '14px 18px',
       boxShadow: '0 2px 8px rgba(29,25,51,.05)',
       display: 'flex', flexDirection: 'column', gap: 4,
     }}>
-      <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', color: T.inkMute }}>{label.toUpperCase()}</div>
-      <div style={{ fontFamily: T.serif, fontSize: 28, fontWeight: 500, color: T.ink, display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ width: 8, height: 8, borderRadius: 4, background: color, display: 'inline-block', flexShrink: 0 }} />
+      <div style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.22em', color: T.inkMute }}>{label.toUpperCase()}</div>
+      <div style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 500, color: T.ink, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 7, height: 7, borderRadius: 4, background: color, display: 'inline-block', flexShrink: 0 }} />
         {value}
       </div>
     </div>
@@ -278,14 +261,16 @@ function StatCard({ label, value, color }: { label: string; value: string; color
 }
 
 // ── Room Card ────────────────────────────────────────────────────────────────
-function RoomCard({ group, completedLessons, earnedCertificates, onClick }: {
+function RoomCard({ group, completedLessons, earnedCertificates, onClick, compact }: {
   group: Group;
   completedLessons: string[];
   earnedCertificates: string[];
   onClick: () => void;
+  compact?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const lessons = group.toolId ? getLessonsForModule(group.toolId, 'it') : [];
+  const { t, lang } = useLanguage();
+  const lessons = group.toolId ? getLessonsForModule(group.toolId, lang) : [];
   const done = lessons.filter(l => completedLessons.includes(l.id)).length;
   const pct = lessons.length > 0 ? Math.round((done / lessons.length) * 100) : 0;
   const certified = group.toolId ? earnedCertificates.includes(group.toolId) : false;
@@ -294,37 +279,35 @@ function RoomCard({ group, completedLessons, earnedCertificates, onClick }: {
 
   return (
     <motion.div
+      className="rm-card"
       onClick={group.locked ? undefined : onClick}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       style={{
-        background: '#fff',
-        borderRadius: 20,
-        overflow: 'hidden',
+        background: '#fff', borderRadius: 20, overflow: 'hidden',
         cursor: group.locked ? 'default' : 'pointer',
         boxShadow: hovered && !group.locked
           ? '0 24px 48px rgba(29,25,51,.14), 0 8px 16px rgba(29,25,51,.06)'
           : '0 4px 12px rgba(29,25,51,.05)',
-        transform: hovered && !group.locked ? 'translateY(-8px)' : 'translateY(0)',
+        transform: hovered && !group.locked ? 'translateY(-6px)' : 'translateY(0)',
         transition: 'all 0.32s cubic-bezier(.2,.8,.3,1.2)',
-        opacity: group.locked ? 0.65 : 1,
-        position: 'relative',
+        opacity: group.locked ? 0.65 : 1, position: 'relative',
       }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: group.locked ? 0.65 : 1, y: 0 }}
-      transition={{ delay: 0.05 * GROUPS.indexOf(group) }}
+      transition={{ delay: 0.04 * GROUPS.indexOf(group) }}
     >
-      {/* Room illustration */}
+      {/* Illustration */}
       <div style={{ position: 'relative', background: accentSoft }}>
-        <RoomIllustration group={group} size={280} />
+        <RoomIllustration group={group} size={compact ? 200 : 280} />
         {certified && (
           <div style={{
-            position: 'absolute', top: 12, right: 12,
-            background: T.yellow, color: T.ink,
-            fontFamily: T.mono, fontSize: 9, fontWeight: 600,
-            letterSpacing: '0.15em', padding: '4px 10px', borderRadius: 999,
+            position: 'absolute', top: 10, right: 10,
+            background: T.yellow, color: T.ink, fontFamily: T.mono,
+            fontSize: 9, fontWeight: 600, letterSpacing: '0.15em',
+            padding: '4px 10px', borderRadius: 999,
             boxShadow: '0 2px 8px rgba(255,209,102,.5)',
-          }}>✦ CERTIFICATO</div>
+          }}>✦ {t('lib.certBadge')}</div>
         )}
         {group.locked && (
           <div style={{
@@ -335,30 +318,29 @@ function RoomCard({ group, completedLessons, earnedCertificates, onClick }: {
             <div style={{
               background: T.ink, color: T.cream, fontFamily: T.mono,
               fontSize: 10, letterSpacing: '0.22em', padding: '8px 16px', borderRadius: 999,
-            }}>IN ARRIVO</div>
+            }}>{t('lib.comingSoon')}</div>
           </div>
         )}
       </div>
 
-      {/* Card body */}
-      <div style={{ padding: '16px 20px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontFamily: T.mono, fontSize: 10, color: T.inkMute, letterSpacing: '0.2em' }}>
-            {group.code}
-          </span>
+      {/* Body */}
+      <div style={{ padding: compact ? '12px 14px 16px' : '16px 20px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <span style={{ fontFamily: T.mono, fontSize: 10, color: T.inkMute, letterSpacing: '0.2em' }}>{group.code}</span>
           {!group.locked && pct > 0 && (
             <span style={{ fontFamily: T.mono, fontSize: 10, color: accent }}>{pct}%</span>
           )}
         </div>
-        <h3 style={{ margin: 0, fontFamily: T.serif, fontSize: 20, fontWeight: 500, color: T.ink, lineHeight: 1.2 }}>
-          {group.title}
+        <h3 style={{ margin: 0, fontFamily: T.serif, fontSize: compact ? 16 : 20, fontWeight: 500, color: T.ink, lineHeight: 1.2 }}>
+          {t(group.titleKey)}
         </h3>
-        <p style={{ margin: '6px 0 14px', fontFamily: T.sans, fontSize: 12, color: T.inkDim, lineHeight: 1.5 }}>
-          {group.desc}
-        </p>
-
+        {!compact && (
+          <p style={{ margin: '6px 0 12px', fontFamily: T.sans, fontSize: 12, color: T.inkDim, lineHeight: 1.5 }}>
+            {t(group.descKey)}
+          </p>
+        )}
         {!group.locked && (
-          <div style={{ height: 4, background: '#f0ece2', borderRadius: 999, overflow: 'hidden' }}>
+          <div style={{ height: 3, background: '#f0ece2', borderRadius: 999, overflow: 'hidden', marginTop: compact ? 8 : 0 }}>
             <motion.div
               style={{ height: '100%', background: accent, borderRadius: 999 }}
               initial={{ width: 0 }}
@@ -372,7 +354,7 @@ function RoomCard({ group, completedLessons, earnedCertificates, onClick }: {
   );
 }
 
-// ── Chip component ───────────────────────────────────────────────────────────
+// ── Chip ─────────────────────────────────────────────────────────────────────
 function Chip({ children }: { children: React.ReactNode }) {
   return (
     <span style={{
@@ -392,8 +374,12 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
   onClose: () => void;
   onOpenModule: (id: string) => void;
 }) {
+  const { t, lang } = useLanguage();
+  const width = useWindowWidth();
+  const isMobile = width < 640;
+
   const tool = group.toolId ? tools.find(t => t.id === group.toolId) : null;
-  const lessons = group.toolId ? getLessonsForModule(group.toolId, 'it') : [];
+  const lessons = group.toolId ? getLessonsForModule(group.toolId, lang) : [];
   const done = lessons.filter(l => completedLessons.includes(l.id)).length;
   const pct = lessons.length > 0 ? Math.round((done / lessons.length) * 100) : 0;
   const accent = hsl(group.hue, 70, 58);
@@ -401,8 +387,11 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
   const certified = group.toolId ? earnedCertificates.includes(group.toolId) : false;
   const totalXP = lessons.reduce((s, l) => s + l.xp, 0);
   const earnedXP = lessons.filter(l => completedLessons.includes(l.id)).reduce((s, l) => s + l.xp, 0);
-
   const nextLesson = lessons.find(l => !completedLessons.includes(l.id));
+
+  const pad = isMobile ? '0 16px' : '0 40px';
+  const navPad = isMobile ? '14px 16px' : '24px 40px';
+  const heroFontSize = isMobile ? 36 : 56;
 
   return (
     <motion.div
@@ -410,77 +399,78 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -40 }}
       transition={{ duration: 0.28 }}
-      style={{
-        minHeight: '100vh', background: T.bg, color: T.ink,
-        fontFamily: T.sans, paddingBottom: 120, overflowY: 'auto',
-      }}
+      style={{ minHeight: '100vh', background: T.bg, color: T.ink, fontFamily: T.sans, paddingBottom: 120, overflowY: 'auto' }}
     >
       {/* Top nav */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 40px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: navPad, gap: 12 }}>
         <button
           onClick={onClose}
           style={{
-            background: '#fff', border: 'none',
-            padding: '10px 20px', borderRadius: 999,
+            background: '#fff', border: 'none', padding: '10px 18px', borderRadius: 999,
             fontFamily: T.sans, fontSize: 13, fontWeight: 500,
             cursor: 'pointer', boxShadow: '0 2px 8px rgba(29,25,51,.08)',
             color: T.ink, display: 'flex', alignItems: 'center', gap: 6,
+            minHeight: 44, whiteSpace: 'nowrap',
           }}>
-          ← Biblioteca
+          {t('lib.backBtn')}
         </button>
-        <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim }}>
-          STANZA {group.code}
+        <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim, flexShrink: 0 }}>
+          {t('lib.roomLabel')} {group.code}
         </div>
-        <div style={{ width: 100 }} />
+        <div style={{ width: isMobile ? 0 : 100, flexShrink: 0 }} />
       </div>
 
-      <div style={{ padding: '0 40px', maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ padding: pad, maxWidth: 1200, margin: '0 auto' }}>
         {/* Hero card */}
         <div style={{
-          background: accentSoft, borderRadius: 24,
-          padding: '36px 40px', marginBottom: 20,
-          display: 'grid', gridTemplateColumns: '1fr auto', gap: 32, alignItems: 'center',
+          background: accentSoft, borderRadius: 24, padding: isMobile ? '24px 20px' : '36px 40px',
+          marginBottom: 16, display: 'grid',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr auto',
+          gap: isMobile ? 20 : 32, alignItems: 'center',
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', right: -60, top: -60, width: 200, height: 200, borderRadius: '50%', background: accent, opacity: 0.08 }} />
           <div>
-            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim, marginBottom: 12 }}>
-              ● STANZA {group.code.replace('G', '')} · PERCORSO BASE
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim, marginBottom: 10 }}>
+              ● {t('lib.roomLabel')} {group.code.replace('G', '')} · {t('lib.basePath')}
             </div>
-            <h1 style={{ margin: 0, fontFamily: T.serif, fontSize: 56, fontWeight: 500, lineHeight: 1.0, letterSpacing: '-0.02em' }}>
-              {group.title}
+            <h1 style={{ margin: 0, fontFamily: T.serif, fontSize: heroFontSize, fontWeight: 500, lineHeight: 1.0, letterSpacing: '-0.02em' }}>
+              {t(group.titleKey)}
             </h1>
-            <p style={{ marginTop: 14, marginBottom: 0, fontSize: 15, lineHeight: 1.6, color: T.inkDim, maxWidth: 500 }}>
-              {group.desc}
+            <p style={{ marginTop: 12, marginBottom: 0, fontSize: 14, lineHeight: 1.6, color: T.inkDim, maxWidth: 500 }}>
+              {t(group.descKey)}
             </p>
-            <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-              <Chip>📚 {lessons.length} lezioni</Chip>
-              <Chip>✦ {totalXP} XP totali</Chip>
-              {certified && <Chip>🏆 Certificato ottenuto</Chip>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+              <Chip>📚 {lessons.length} {t('lib.lessonsChip')}</Chip>
+              <Chip>✦ {totalXP} {t('lib.xpChip')}</Chip>
+              {certified && <Chip>🏆 {t('lib.certChip')}</Chip>}
             </div>
           </div>
-          <RoomIllustration group={group} size={200} />
+          {!isMobile && <RoomIllustration group={group} size={180} />}
         </div>
 
         {/* Stats row */}
         <div style={{
-          background: '#fff', borderRadius: 18, padding: '20px 28px', marginBottom: 20,
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'center',
+          background: '#fff', borderRadius: 18,
+          padding: isMobile ? '16px 18px' : '18px 24px', marginBottom: 16,
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+          gap: 12, alignItems: 'center',
           boxShadow: '0 2px 8px rgba(29,25,51,.05)',
         }}>
           {[
-            { label: 'Lezioni completate', value: `${done}/${lessons.length}` },
-            { label: 'XP guadagnati', value: `${earnedXP} XP` },
-            { label: 'Avanzamento', value: `${pct}%` },
+            { label: t('lib.lessonsCompleted'), value: `${done}/${lessons.length}` },
+            { label: t('lib.xpStats'),          value: `${earnedXP} XP` },
+            { label: t('lib.progressLabel'),     value: `${pct}%` },
           ].map(s => (
             <div key={s.label}>
-              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.18em', color: T.inkMute, marginBottom: 4 }}>{s.label.toUpperCase()}</div>
-              <div style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 500 }}>{s.value}</div>
+              <div style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.18em', color: T.inkMute, marginBottom: 3 }}>{s.label.toUpperCase()}</div>
+              <div style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 500 }}>{s.value}</div>
             </div>
           ))}
           <div>
-            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.18em', color: T.inkMute, marginBottom: 8 }}>PROGRESSIONE</div>
-            <div style={{ height: 8, background: '#f0ece2', borderRadius: 999, overflow: 'hidden' }}>
+            <div style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.18em', color: T.inkMute, marginBottom: 6 }}>{t('lib.progressBar')}</div>
+            <div style={{ height: 7, background: '#f0ece2', borderRadius: 999, overflow: 'hidden' }}>
               <motion.div
                 style={{ height: '100%', background: accent, borderRadius: 999 }}
                 initial={{ width: 0 }} animate={{ width: `${pct}%` }}
@@ -493,17 +483,19 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
         {/* Continue CTA */}
         {tool && nextLesson && (
           <div style={{
-            background: T.ink, color: T.cream,
-            borderRadius: 18, padding: '22px 28px', marginBottom: 28,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24,
+            background: T.ink, color: T.cream, borderRadius: 18,
+            padding: isMobile ? '18px 20px' : '20px 26px', marginBottom: 24,
+            display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'flex-start' : 'center',
+            justifyContent: 'space-between', gap: 16,
             position: 'relative', overflow: 'hidden',
           }}>
             <div style={{ position: 'absolute', right: -20, top: -30, width: 120, height: 120, borderRadius: '50%', background: T.yellow, opacity: 0.12 }} />
             <div style={{ position: 'relative' }}>
-              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', opacity: 0.6, marginBottom: 8 }}>
-                {done === 0 ? 'INIZIA CON' : 'CONTINUA DA'}
+              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', opacity: 0.6, marginBottom: 6 }}>
+                {done === 0 ? t('lib.startWith') : t('lib.continueFrom')}
               </div>
-              <div style={{ fontFamily: T.serif, fontSize: 26, fontWeight: 500 }}>{nextLesson.title}</div>
+              <div style={{ fontFamily: T.serif, fontSize: isMobile ? 20 : 24, fontWeight: 500 }}>{nextLesson.title}</div>
               <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
                 {nextLesson.duration} · +{nextLesson.xp} XP
               </div>
@@ -516,15 +508,19 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
                 fontFamily: T.sans, fontSize: 14, fontWeight: 700,
                 cursor: 'pointer', whiteSpace: 'nowrap',
                 boxShadow: `0 6px 20px ${T.yellow}88`, flexShrink: 0,
-              }}>▶ {done === 0 ? 'Inizia' : 'Riprendi'}</button>
+                minHeight: 48, alignSelf: isMobile ? 'stretch' : 'auto',
+                textAlign: 'center',
+              }}>
+              ▶ {done === 0 ? t('lib.startBtn') : t('lib.resumeBtn')}
+            </button>
           </div>
         )}
 
         {/* Lessons list */}
         {lessons.length > 0 && (
           <div>
-            <h2 style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 500, margin: '0 0 16px', color: T.ink }}>
-              Lezioni
+            <h2 style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 500, margin: '0 0 14px', color: T.ink }}>
+              {t('lib.lessonsTitle')}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {lessons.map((lesson, idx) => {
@@ -537,20 +533,18 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
                     transition={{ delay: idx * 0.04 }}
                     onClick={tool && (isCompleted || isCurrent) ? () => onOpenModule(tool.id) : undefined}
                     style={{
-                      background: '#fff', borderRadius: 14, padding: '16px 20px',
-                      display: 'flex', alignItems: 'center', gap: 14,
+                      background: '#fff', borderRadius: 14, padding: '14px 18px',
+                      display: 'flex', alignItems: 'center', gap: 12,
                       boxShadow: '0 1px 4px rgba(29,25,51,.05)',
                       cursor: tool && (isCompleted || isCurrent) ? 'pointer' : 'default',
                       opacity: idx > done + 2 ? 0.5 : 1,
-                      transition: 'box-shadow .2s',
+                      transition: 'box-shadow .2s', minHeight: 56,
                     }}
                   >
-                    {/* Status dot */}
                     <div style={{
                       width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                       background: isCompleted ? T.green : isCurrent ? accent : '#f0ece2',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
                     }}>
                       {isCompleted ? '✓' : isCurrent ? '▶' : String(idx + 1).padStart(2, '0')}
                     </div>
@@ -559,10 +553,14 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
                       <div style={{ fontFamily: T.mono, fontSize: 11, color: T.inkMute }}>{lesson.duration} · +{lesson.xp} XP</div>
                     </div>
                     {isCompleted && (
-                      <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: T.green, background: `${T.green}20`, padding: '4px 10px', borderRadius: 999 }}>COMPLETATA</span>
+                      <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: T.green, background: `${T.green}20`, padding: '4px 10px', borderRadius: 999, flexShrink: 0 }}>
+                        {t('lib.completedBadge')}
+                      </span>
                     )}
                     {isCurrent && (
-                      <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: accent, background: `${accent}20`, padding: '4px 10px', borderRadius: 999 }}>PROSSIMA</span>
+                      <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: accent, background: `${accent}20`, padding: '4px 10px', borderRadius: 999, flexShrink: 0 }}>
+                        {t('lib.nextBadge')}
+                      </span>
                     )}
                   </motion.div>
                 );
@@ -582,37 +580,43 @@ function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profil
   onOpenGroup: (g: Group) => void;
   profile: any;
 }) {
-  const totalLessons = GROUPS.filter(g => g.toolId).reduce((s, g) => {
-    return s + getLessonsForModule(g.toolId!, 'it').length;
-  }, 0);
+  const { t, lang } = useLanguage();
+  const width = useWindowWidth();
+  const isMobile = width < 640;
+  const isTablet = width < 1024;
+
   const totalCompleted = completedLessons.length;
   const totalXP = GROUPS.filter(g => g.toolId).reduce((s, g) => {
-    const ls = getLessonsForModule(g.toolId!, 'it');
+    const ls = getLessonsForModule(g.toolId!, lang);
     return s + ls.filter(l => completedLessons.includes(l.id)).reduce((a, l) => a + l.xp, 0);
   }, 0);
   const groupsDone = GROUPS.filter(g => {
     if (!g.toolId) return false;
-    const ls = getLessonsForModule(g.toolId, 'it');
+    const ls = getLessonsForModule(g.toolId, lang);
     return ls.length > 0 && ls.every(l => completedLessons.includes(l.id));
   }).length;
 
-  const firstName = (profile?.displayName || 'Caro utente').split(' ')[0];
+  const firstName = (profile?.displayName || '').split(' ')[0] || '';
   const inProgress = GROUPS.find(g => {
     if (!g.toolId) return false;
-    const ls = getLessonsForModule(g.toolId, 'it');
+    const ls = getLessonsForModule(g.toolId, lang);
     const d = ls.filter(l => completedLessons.includes(l.id)).length;
     return d > 0 && d < ls.length;
   });
   const nextGroup = inProgress || GROUPS.find(g => {
     if (!g.toolId) return false;
-    const ls = getLessonsForModule(g.toolId, 'it');
+    const ls = getLessonsForModule(g.toolId, lang);
     return !ls.some(l => completedLessons.includes(l.id));
   });
   const nextLesson = nextGroup?.toolId
-    ? getLessonsForModule(nextGroup.toolId, 'it').find(l => !completedLessons.includes(l.id))
+    ? getLessonsForModule(nextGroup.toolId, lang).find(l => !completedLessons.includes(l.id))
     : null;
   const initials = (profile?.displayName || 'U')
     .split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('');
+
+  const headerPad = isMobile ? '14px 16px' : '24px 40px';
+  const heroPad = isMobile ? '20px 16px 16px' : '28px 40px 20px';
+  const contentPad = isMobile ? '0 16px' : '0 40px';
 
   return (
     <div style={{
@@ -621,127 +625,139 @@ function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profil
       backgroundImage: `radial-gradient(circle at 6% 0%, ${T.yellow}28 0%, transparent 32%), radial-gradient(circle at 94% 16%, ${T.pink}18 0%, transparent 36%)`,
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 40px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          background: '#fff', borderRadius: 999, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
-          padding: 4,
-        }}>
-          <span style={{ background: T.ink, color: T.cream, padding: '6px 14px', borderRadius: 999, fontSize: 11, fontWeight: 600, letterSpacing: '.12em' }}>IT</span>
-          <span style={{ padding: '6px 10px', fontSize: 11, color: T.inkDim }}>EN</span>
-        </div>
-        <div style={{ fontFamily: T.serif, fontWeight: 600, fontSize: 18, letterSpacing: '0.18em', color: T.ink }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: headerPad, gap: 12 }}>
+        <LightLangToggle />
+        <div style={{ fontFamily: T.serif, fontWeight: 600, fontSize: isMobile ? 15 : 18, letterSpacing: '0.18em', color: T.ink }}>
           DIGITAL BRIDGE
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{
-            padding: '8px 16px', background: '#fff', borderRadius: 999, fontSize: 12,
+            padding: '7px 14px', background: '#fff', borderRadius: 999, fontSize: 12,
             fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
-            display: 'flex', alignItems: 'center', gap: 8, color: T.ink,
+            display: 'flex', alignItems: 'center', gap: 6, color: T.ink,
           }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
             {totalXP} XP
           </div>
-          <div style={{
-            width: 40, height: 40, borderRadius: '50%',
-            background: T.purple, color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700,
-            boxShadow: `0 4px 12px ${T.purple}55`,
-          }}>{initials || 'U'}</div>
+          {!isMobile && (
+            <div style={{
+              width: 38, height: 38, borderRadius: '50%',
+              background: T.purple, color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 700,
+              boxShadow: `0 4px 12px ${T.purple}55`,
+            }}>{initials || 'U'}</div>
+          )}
         </div>
       </div>
 
       {/* Hero */}
-      <div style={{ padding: '32px 40px 24px', maxWidth: 1400, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <span style={{ width: 8, height: 8, borderRadius: 4, background: T.pink }} />
-          <span style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.22em', color: T.inkDim }}>
-            CIAO {firstName.toUpperCase()}, {totalCompleted === 0 ? 'BENVENUTO' : 'BENTORNATO'}
+      <div style={{ padding: heroPad, maxWidth: 1400, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <span style={{ width: 7, height: 7, borderRadius: 4, background: T.pink }} />
+          <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', color: T.inkDim }}>
+            {firstName ? `${firstName.toUpperCase()}, ` : ''}{totalCompleted === 0 ? t('lib.welcome') : t('lib.welcomeBack')}
           </span>
         </div>
         <h1 style={{
-          margin: '0 0 32px', fontFamily: T.serif,
-          fontSize: 'clamp(52px, 6vw, 80px)', fontWeight: 500,
-          lineHeight: 1.0, letterSpacing: '-0.02em', maxWidth: 860,
+          margin: '0 0 24px', fontFamily: T.serif,
+          fontSize: isMobile ? 'clamp(38px, 9vw, 52px)' : 'clamp(52px, 6vw, 80px)',
+          fontWeight: 500, lineHeight: 1.0, letterSpacing: '-0.02em',
+          maxWidth: isMobile ? '100%' : 860,
         }}>
-          Scegli una{' '}
+          {t('lib.hero1')}{' '}
           <span style={{
-            background: T.yellow, padding: '2px 14px', borderRadius: 10,
+            background: T.yellow, padding: isMobile ? '1px 10px' : '2px 14px', borderRadius: 10,
             display: 'inline-block', transform: 'rotate(-1.2deg)',
-          }}>stanza</span>{' '}e
-          <br />inizia ad <em style={{ fontFamily: T.serif, fontStyle: 'italic', color: T.purple }}>esplorare</em>.
+          }}>{t('lib.heroBold')}</span>{' '}{t('lib.hero2')}
+          <br />{t('lib.hero3')} <em style={{ fontFamily: T.serif, fontStyle: 'italic', color: T.purple }}>{t('lib.heroItalic')}</em>.
         </h1>
 
         {/* Stats row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 14, marginBottom: 48 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : isTablet ? 'repeat(2, 1fr)' : '2fr 1fr 1fr 1fr',
+          gap: 12, marginBottom: 36,
+        }}>
           {/* Continue card */}
           {nextGroup && nextLesson ? (
             <div
               onClick={() => onOpenGroup(nextGroup)}
               style={{
-                background: T.ink, color: T.cream, padding: '22px 26px',
+                background: T.ink, color: T.cream,
+                padding: isMobile ? '18px 18px' : '20px 24px',
                 borderRadius: 20, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                 position: 'relative', overflow: 'hidden',
                 boxShadow: '0 8px 24px rgba(29,25,51,.18)',
+                gridColumn: isMobile ? '1 / -1' : undefined,
               }}>
               <div style={{ position: 'absolute', right: -40, top: -40, width: 140, height: 140, borderRadius: '50%', background: T.yellow, opacity: 0.12 }} />
-              <div style={{ position: 'relative', minWidth: 0 }}>
-                <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', opacity: 0.6, marginBottom: 4 }}>
-                  {inProgress ? 'RIPRENDI DA' : 'INIZIA CON'}
+              <div style={{ position: 'relative', minWidth: 0, flex: 1 }}>
+                <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.22em', opacity: 0.6, marginBottom: 3 }}>
+                  {inProgress ? t('lib.continueFrom') : t('lib.startWith')}
                 </div>
-                <div style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontFamily: T.serif, fontSize: isMobile ? 18 : 20, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {nextLesson.title}
                 </div>
-                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
-                  {nextGroup.title} · {nextLesson.duration} · +{nextLesson.xp} XP
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 3 }}>
+                  {t(nextGroup.titleKey)} · {nextLesson.duration} · +{nextLesson.xp} XP
                 </div>
               </div>
               <button style={{
                 background: T.yellow, color: T.ink, border: 'none',
-                padding: '12px 20px', borderRadius: 999,
+                padding: '11px 18px', borderRadius: 999,
                 fontFamily: T.sans, fontWeight: 700, fontSize: 13,
                 cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                boxShadow: `0 4px 12px ${T.yellow}66`,
-              }}>▶ Continua</button>
+                boxShadow: `0 4px 12px ${T.yellow}66`, minHeight: 44,
+              }}>▶ {t('lib.continueCta')}</button>
             </div>
           ) : (
             <div style={{
-              background: T.ink, color: T.cream, padding: '22px 26px', borderRadius: 20,
+              background: T.ink, color: T.cream,
+              padding: '20px 24px', borderRadius: 20,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gridColumn: isMobile ? '1 / -1' : undefined,
             }}>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 500 }}>🏆 Completo!</div>
-                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>Hai esplorato tutto il percorso base</div>
+                <div style={{ fontFamily: T.serif, fontSize: 22, fontWeight: 500 }}>{t('lib.allComplete')}</div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>{t('lib.allCompleteDesc')}</div>
               </div>
             </div>
           )}
-          <StatCard label="Stanze esplorate" value={`${groupsDone}/10`} color={T.blue} />
-          <StatCard label="XP guadagnati" value={`${totalXP}`} color={T.green} />
-          <StatCard label="Certificati" value={`${earnedCertificates.length}/6`} color={T.yellow} />
+          <StatCard label={t('lib.roomsExplored')} value={`${groupsDone}/10`} color={T.blue} />
+          <StatCard label={t('lib.xpEarned')}      value={`${totalXP}`}       color={T.green} />
+          <StatCard label={t('lib.certificates')}  value={`${earnedCertificates.length}/6`} color={T.yellow} />
         </div>
 
-        {/* Grid of rooms */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20 }}>
-          {GROUPS.map(group => (
-            <RoomCard
-              key={group.id}
-              group={group}
-              completedLessons={completedLessons}
-              earnedCertificates={earnedCertificates}
-              onClick={() => onOpenGroup(group)}
-            />
-          ))}
+        {/* Room grid */}
+        <div style={{ padding: contentPad.replace('0 ', '') ? '0' : undefined }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, 1fr)'
+              : `repeat(auto-fill, minmax(${isTablet ? '200px' : '240px'}, 1fr))`,
+            gap: isMobile ? 12 : 20,
+          }}>
+            {GROUPS.map(group => (
+              <RoomCard
+                key={group.id}
+                group={group}
+                completedLessons={completedLessons}
+                earnedCertificates={earnedCertificates}
+                onClick={() => onOpenGroup(group)}
+                compact={isMobile}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── CSS for room hover animations ────────────────────────────────────────────
+// ── CSS animations ────────────────────────────────────────────────────────────
 const ROOM_STYLES = `
-  @keyframes rm-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
   .rm-book { transition: transform 0.4s cubic-bezier(.3,.8,.3,1.3); }
   .rm-card:hover .rm-book.b1 { transform: translateY(-8px) rotate(-2deg); }
   .rm-card:hover .rm-book.b2 { transform: translateY(-4px); }
@@ -755,7 +771,7 @@ const ROOM_STYLES = `
   .rm-card:hover .rm-lamp-glow { opacity: 0.5 !important; }
 `;
 
-// ── Main Biblioteca component ─────────────────────────────────────────────────
+// ── Main Biblioteca ───────────────────────────────────────────────────────────
 interface BibliotecaProps {
   completedLessons: string[];
   earnedCertificates: string[];
@@ -767,7 +783,6 @@ export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule 
   const [activeGroup, setActiveGroup] = useState<Group | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
-  // Inject room animation styles once
   useMemo(() => {
     if (typeof document !== 'undefined' && !document.getElementById('biblioteca-room-styles')) {
       const s = document.createElement('style');
@@ -779,11 +794,11 @@ export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule 
 
   const openGroup = (g: Group) => {
     setTransitioning(true);
-    setTimeout(() => { setActiveGroup(g); setTransitioning(false); }, 200);
+    setTimeout(() => { setActiveGroup(g); setTransitioning(false); }, 180);
   };
   const closeGroup = () => {
     setTransitioning(true);
-    setTimeout(() => { setActiveGroup(null); setTransitioning(false); }, 200);
+    setTimeout(() => { setActiveGroup(null); setTransitioning(false); }, 180);
   };
 
   return (

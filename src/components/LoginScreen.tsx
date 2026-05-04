@@ -19,7 +19,7 @@ export function LoginScreen() {
 
     // Codice obbligatorio
     if (!code) {
-      setCodeError('Inserisci il codice di accesso per continuare.');
+      setCodeError(t('login.codeRequired'));
       return;
     }
 
@@ -36,7 +36,7 @@ export function LoginScreen() {
         .single();
 
       if (dbError || !data) {
-        setCodeError('Codice non valido. Controlla il codice ricevuto e riprova.');
+        setCodeError(t('login.codeInvalidDB'));
         setIsLoading(false);
         return;
       }
@@ -122,7 +122,7 @@ export function LoginScreen() {
             <div className="mb-5">
               <label className="flex items-center gap-2 text-white/40 text-xs mb-2">
                 <KeyRound className="w-3.5 h-3.5" />
-                Codice di accesso
+                {t('login.codeLabel')}
               </label>
               <input
                 type="text"
@@ -162,7 +162,7 @@ export function LoginScreen() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                 </svg>
               )}
-              {isLoading ? 'Verifica codice...' : t('login.google')}
+              {isLoading ? t('login.verifying') : t('login.google')}
             </button>
 
             {error && <p className="mt-3 text-red-400 text-sm text-center">{error}</p>}

@@ -116,10 +116,10 @@ const annMeta: Record<
 
 // ── XP level thresholds ───────────────────────────────────────────────────────
 const XP_LEVELS = [
-  { label: 'Principiante', threshold: 0,   next: 100  },
-  { label: 'Studente',     threshold: 100,  next: 300  },
-  { label: 'Esperto',      threshold: 300,  next: 600  },
-  { label: 'Maestro',      threshold: 600,  next: 1000 },
+  { key: 'home.lvl0', threshold: 0,   next: 100  },
+  { key: 'home.lvl1', threshold: 100,  next: 300  },
+  { key: 'home.lvl2', threshold: 300,  next: 600  },
+  { key: 'home.lvl3', threshold: 600,  next: 1000 },
 ];
 
 function getXPLevel(xp: number) {
@@ -255,10 +255,10 @@ export function HomeDashboard({
               </h1>
               <p className="text-white/30 text-xs mt-2 leading-relaxed max-w-xs">
                 {completedCount === 0
-                  ? 'Ogni grande viaggio inizia dal primo passo.'
+                  ? t('home.firstStep')
                   : completedCount < 6
-                  ? `${completedCount} ${completedCount === 1 ? 'lezione completata' : 'lezioni completate'} — vai avanti!`
-                  : `Ottimo ritmo — stai progredendo bene.`}
+                  ? `${completedCount} ${completedCount === 1 ? t('home.lessonCountSingular') : t('home.lessonCountPlural')}`
+                  : t('home.goodRhythm')}
               </p>
             </div>
 
@@ -272,7 +272,7 @@ export function HomeDashboard({
                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-orange-500/12 border border-orange-500/30 rounded-xl"
                 >
                   <Flame className="w-3.5 h-3.5 text-orange-400" />
-                  <span className="text-orange-300 text-xs font-bold tabular-nums">{streak.currentStreak}gg</span>
+                  <span className="text-orange-300 text-xs font-bold tabular-nums">{streak.currentStreak}{t('home.dayAbbr')}</span>
                 </motion.div>
               )}
               <button
@@ -297,7 +297,7 @@ export function HomeDashboard({
             className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5"
           >
             <p className="text-white/20 text-[10px] font-mono tracking-[0.25em] uppercase mb-4">
-              Percorso Base — M01–M06
+              {t('home.basePath2')}
             </p>
             <div className="flex items-center gap-5">
               {/* Donut */}
@@ -316,7 +316,7 @@ export function HomeDashboard({
                     <p className="font-mono text-sm font-bold text-white tabular-nums">
                       {completedCount}<span className="text-white/25 text-[10px] font-normal">/{totalLessons}</span>
                     </p>
-                    <p className="text-blue-300/60 text-[9px]">Lezioni</p>
+                    <p className="text-blue-300/60 text-[9px]">{t('home.lessonsLabel')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/15">
@@ -325,7 +325,7 @@ export function HomeDashboard({
                     <p className="font-mono text-sm font-bold text-amber-300 tabular-nums">
                       {totalXP}<span className="text-amber-400/45 text-[10px] font-normal ml-0.5">XP</span>
                     </p>
-                    <p className="text-amber-300/55 text-[9px]">Punti</p>
+                    <p className="text-amber-300/55 text-[9px]">{t('home.pointsLabel')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-2.5 rounded-xl bg-orange-500/8 border border-orange-500/15">
@@ -334,7 +334,7 @@ export function HomeDashboard({
                     <p className="font-mono text-sm font-bold text-orange-300 tabular-nums">
                       {streak?.currentStreak ?? 0}<span className="text-orange-400/45 text-[10px] font-normal ml-0.5">gg</span>
                     </p>
-                    <p className="text-orange-300/55 text-[9px]">Streak</p>
+                    <p className="text-orange-300/55 text-[9px]">Streak 🔥</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-2.5 rounded-xl bg-yellow-500/8 border border-yellow-500/15">
@@ -343,7 +343,7 @@ export function HomeDashboard({
                     <p className="font-mono text-sm font-bold text-yellow-300 tabular-nums">
                       {earnedCertificates.length}<span className="text-yellow-400/45 text-[10px] font-normal ml-0.5">/6</span>
                     </p>
-                    <p className="text-yellow-300/55 text-[9px]">Certificati</p>
+                    <p className="text-yellow-300/55 text-[9px]">{t('home.certsLabel')}</p>
                   </div>
                 </div>
               </div>
@@ -358,16 +358,16 @@ export function HomeDashboard({
             className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5 space-y-5"
           >
             <p className="text-white/20 text-[10px] font-mono tracking-[0.25em] uppercase">
-              Attività di Studio
+              {t('home.studyActivity')}
             </p>
 
             {/* Weekly activity chart */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-white/35 text-xs">Ultimi 7 giorni</span>
+                <span className="text-white/35 text-xs">{t('home.last7days')}</span>
                 {streak && streak.currentStreak > 0 && (
                   <span className="text-indigo-400 text-[10px] font-mono">
-                    {streak.currentStreak} {streak.currentStreak === 1 ? 'giorno' : 'giorni'} consecutivi 🔥
+                    {streak.currentStreak} {streak.currentStreak === 1 ? t('home.dayFull') : t('home.daysFull')} {t('home.streakSuffix')} 🔥
                   </span>
                 )}
               </div>
@@ -383,34 +383,34 @@ export function HomeDashboard({
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3 h-3 text-sky-400" />
-                  <span className="text-sky-400/70 text-[9px] font-mono uppercase tracking-wider">Tempo</span>
+                  <span className="text-sky-400/70 text-[9px] font-mono uppercase tracking-wider">{t('home.studyTimeLabel')}</span>
                 </div>
                 <p className="font-mono text-lg font-bold text-white tabular-nums leading-none">
                   {studyTimeLabel || '0m'}
                 </p>
-                <p className="text-white/25 text-[9px]">di studio totale</p>
+                <p className="text-white/25 text-[9px]">{t('home.totalStudy')}</p>
               </div>
 
               {/* Best streak */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <TrendingUp className="w-3 h-3 text-emerald-400" />
-                  <span className="text-emerald-400/70 text-[9px] font-mono uppercase tracking-wider">Record</span>
+                  <span className="text-emerald-400/70 text-[9px] font-mono uppercase tracking-wider">{t('home.recordLabel')}</span>
                 </div>
                 <p className="font-mono text-lg font-bold text-white tabular-nums leading-none">
-                  {streak?.longestStreak ?? 0}gg
+                  {streak?.longestStreak ?? 0}{t('home.dayAbbr')}
                 </p>
-                <p className="text-white/25 text-[9px]">streak migliore</p>
+                <p className="text-white/25 text-[9px]">{t('home.bestStreak')}</p>
               </div>
 
               {/* XP level */}
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-1.5">
                   <Target className="w-3 h-3 text-purple-400" />
-                  <span className="text-purple-400/70 text-[9px] font-mono uppercase tracking-wider">Livello</span>
+                  <span className="text-purple-400/70 text-[9px] font-mono uppercase tracking-wider">{t('home.levelLabel')}</span>
                 </div>
                 <p className="font-mono text-lg font-bold text-white tabular-nums leading-none">
-                  {xpLevel.label}
+                  {t(xpLevel.key)}
                 </p>
                 <p className="text-white/25 text-[9px]">{totalXP} / {xpLevel.next} XP</p>
               </div>
@@ -419,9 +419,9 @@ export function HomeDashboard({
             {/* XP level progress bar */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
-                <span className="text-white/20 text-[9px] font-mono">{xpLevel.label}</span>
+                <span className="text-white/20 text-[9px] font-mono">{t(xpLevel.key)}</span>
                 <span className="text-white/20 text-[9px] font-mono">
-                  {XP_LEVELS[Math.min(xpLevel.index + 1, XP_LEVELS.length - 1)]?.label ?? 'MAX'}
+                  {t(XP_LEVELS[Math.min(xpLevel.index + 1, XP_LEVELS.length - 1)]?.key ?? 'home.lvl3')}
                 </span>
               </div>
               <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
@@ -434,7 +434,7 @@ export function HomeDashboard({
                 />
               </div>
               <p className="text-white/20 text-[9px] font-mono mt-1 text-right">
-                {xpLevel.next - totalXP > 0 ? `ancora ${xpLevel.next - totalXP} XP al prossimo livello` : 'Livello massimo!'}
+                {xpLevel.next - totalXP > 0 ? `${xpLevel.next - totalXP} ${t('home.xpToNext')}` : t('home.maxLevel')}
               </p>
             </div>
           </motion.div>
@@ -466,7 +466,7 @@ export function HomeDashboard({
                 {activeModule ? (
                   <>
                     <p className="text-white/40 text-[10px] font-mono tracking-wider uppercase mb-0.5">
-                      {inProgressModule ? 'Continua da' : 'Inizia con'}
+                      {inProgressModule ? t('home.continueFromLabel') : t('home.startWithLabel')}
                     </p>
                     <p className="text-white font-semibold text-sm">
                       {activeModule.moduleCode} · {activeModule.name}
@@ -486,10 +486,10 @@ export function HomeDashboard({
                 ) : (
                   <>
                     <p className="text-white/40 text-[10px] font-mono tracking-wider uppercase mb-0.5">
-                      Percorso completato
+                      {t('home.pathComplete')}
                     </p>
-                    <p className="text-white font-semibold text-sm">Vai alla Biblioteca</p>
-                    <p className="text-white/30 text-[11px] mt-0.5">Rivedi i tuoi moduli</p>
+                    <p className="text-white font-semibold text-sm">{t('home.goToLibrary')}</p>
+                    <p className="text-white/30 text-[11px] mt-0.5">{t('home.reviewModules')}</p>
                   </>
                 )}
               </div>
@@ -512,11 +512,11 @@ export function HomeDashboard({
             <div className="flex items-center gap-2 mb-3">
               <Bell className="w-3.5 h-3.5 text-white/20" />
               <p className="text-white/20 text-[10px] font-mono tracking-[0.25em] uppercase flex-1">
-                Comunicazioni dall'Ente
+                {t('home.announcements')}
               </p>
               {unreadCount > 0 && (
                 <span className="text-[9px] font-mono text-indigo-400 bg-indigo-500/12 border border-indigo-500/20 px-2 py-0.5 rounded-full">
-                  {unreadCount} nuove
+                  {unreadCount} {t('home.newAnn')}
                 </span>
               )}
             </div>
