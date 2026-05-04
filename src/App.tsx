@@ -1,6 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { LayoutDashboard, BookOpen, TrendingUp, GraduationCap, Users, Loader2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, TrendingUp, GraduationCap, Users, Loader2, HelpCircle } from 'lucide-react';
 import { ModuleOverlay } from './components/ModuleOverlay';
 import { AIChat } from './components/AIChat';
 import { ProfileOverlay } from './components/ProfileOverlay';
@@ -10,6 +10,7 @@ import { LanguageToggle } from './components/LanguageToggle';
 import { HomeDashboard } from './components/HomeDashboard';
 import { ProgressScreen } from './components/ProgressScreen';
 import { Biblioteca } from './components/Biblioteca';
+import { OnboardingOverlay, hasSeenOnboarding, markOnboardingDone } from './components/OnboardingOverlay';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
 import { tools } from './data/tools';
@@ -175,7 +176,7 @@ function CertificationSection({
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App() {
   const { user, loading } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
 
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [showModule, setShowModule] = useState(false);
@@ -185,6 +186,7 @@ export default function App() {
   const [activeExamModuleId, setActiveExamModuleId] = useState<string | null>(null);
   const [showCoordinator, setShowCoordinator] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastStudyDate: null });
 
   // Load progress from Supabase
@@ -208,6 +210,15 @@ export default function App() {
       .then(({ data }) => {
         if (data) setEarnedCertificates(data.map((r: any) => r.module_id));
       });
+  }, [user]);
+
+  // Show onboarding for new users (first login)
+  useEffect(() => {
+    if (!user) return;
+    if (!hasSeenOnboarding()) {
+      const timer = setTimeout(() => setShowOnboarding(true), 900);
+      return () => clearTimeout(timer);
+    }
   }, [user]);
 
   // Delay module opening for 3D animation
@@ -413,6 +424,13 @@ export default function App() {
         {showProfile && <ProfileOverlay onClose={() => setShowProfile(false)} />}
       </AnimatePresence>
 
+      {/* Onboarding / Tutorial overlay */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingOverlay onClose={() => setShowOnboarding(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Coordinator Panel modal */}
       <AnimatePresence>
         {showCoordinator && (
@@ -490,6 +508,25 @@ export default function App() {
                 {l.toUpperCase()}
               </button>
             ))}
+
+            {/* Divider */}
+            <div className={`w-px h-5 mx-0.5 rounded-full ${
+              currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
+            }`} />
+
+            {/* Help / Tutorial button */}
+            <button
+              type="button"
+              onClick={() => setShowOnboarding(true)}
+              title={t('onb.replayBtn')}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                currentSection === 'library'
+                  ? 'text-[#1d1933]/35 hover:text-[#1d1933] hover:bg-black/[0.05]'
+                  : 'text-white/30 hover:text-white hover:bg-white/[0.06]'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
           </div>
         </motion.div>
       )}

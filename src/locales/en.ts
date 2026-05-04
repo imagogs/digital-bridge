@@ -272,6 +272,25 @@ const en = {
   'home.lvl1': 'Student',
   'home.lvl2': 'Expert',
   'home.lvl3': 'Master',
+
+  // Onboarding
+  'onb.welcome.title': 'Welcome to DIGITAL BRIDGE',
+  'onb.welcome.desc': 'The simplest path to digital independence. A few minutes a day and you\'ll be confident navigating the online world.',
+  'onb.library.title': 'The Library',
+  'onb.library.desc': 'Choose a topic room and access your modules. Each room covers a different area of the digital world.',
+  'onb.lessons.title': 'Lessons',
+  'onb.lessons.desc': 'Each lesson takes just a few minutes. Practical examples, illustrations and questions to check what you\'ve learned.',
+  'onb.progress.title': 'Your Progress',
+  'onb.progress.desc': 'Earn XP after each lesson, keep your daily streak alive and level up. Every day counts!',
+  'onb.cert.title': 'Official Certifications',
+  'onb.cert.desc': 'Pass the final exam for each module and earn your official DIGITAL BRIDGE Certificate — recognised on the job market.',
+  'onb.sofia.title': 'Sofia, your AI Teacher',
+  'onb.sofia.desc': 'At any time you can ask Sofia for help. She explains concepts, answers your questions and guides you step by step.',
+  'onb.skip': 'Skip',
+  'onb.next': 'Next',
+  'onb.prev': 'Back',
+  'onb.start': 'Start the journey',
+  'onb.replayBtn': 'How it works?',
 } as const;
 
 export default en;

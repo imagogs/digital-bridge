@@ -272,6 +272,25 @@ const it = {
   'home.lvl1': 'Studente',
   'home.lvl2': 'Esperto',
   'home.lvl3': 'Maestro',
+
+  // Onboarding
+  'onb.welcome.title': 'Benvenuto in DIGITAL BRIDGE',
+  'onb.welcome.desc': "Il percorso più semplice verso l'autonomia digitale. Pochi minuti al giorno e diventerai indipendente nel mondo online.",
+  'onb.library.title': 'La Biblioteca',
+  'onb.library.desc': 'Scegli una stanza tematica e accedi ai tuoi moduli. Ogni stanza copre un\'area diversa del mondo digitale.',
+  'onb.lessons.title': 'Le Lezioni',
+  'onb.lessons.desc': 'Ogni lezione dura pochi minuti. Esempi pratici, video e domande per verificare quello che hai imparato.',
+  'onb.progress.title': 'I Tuoi Progressi',
+  'onb.progress.desc': 'Guadagna XP dopo ogni lezione, mantieni la serie giornaliera e sali di livello. Ogni giorno conta!',
+  'onb.cert.title': 'Certificazioni Ufficiali',
+  'onb.cert.desc': "Supera l'esame finale di ogni modulo e ottieni il tuo Certificato DIGITAL BRIDGE ufficiale — spendibile nel mercato del lavoro.",
+  'onb.sofia.title': 'Sofia, la tua Insegnante AI',
+  'onb.sofia.desc': 'In qualsiasi momento puoi chiedere aiuto a Sofia. Spiega i concetti, risponde alle domande e ti guida passo dopo passo.',
+  'onb.skip': 'Salta',
+  'onb.next': 'Avanti',
+  'onb.prev': 'Indietro',
+  'onb.start': 'Inizia il percorso',
+  'onb.replayBtn': 'Come funziona?',
 } as const;
 
 export type TranslationKeys = keyof typeof it;
