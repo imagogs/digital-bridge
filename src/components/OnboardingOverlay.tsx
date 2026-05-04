@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import type { Lang } from '../contexts/LanguageContext';
 
 // ── Storage helpers ────────────────────────────────────────────────────────────
 export const ONBOARDING_KEY = 'db_onboarding_v1';
@@ -398,15 +399,75 @@ const STEPS = [
   { key: 'sofia',    accent: '#a78bfa', from: '#1a0b3d', Illustration: SofiaIllustration    },
 ] as const;
 
+// ── Language picker (step 0 if no language has been set yet) ──────────────────
+function LanguagePickerStep({ onPick }: { onPick: (l: Lang) => void }) {
+  const options: { lang: Lang; flag: string; labelIT: string; labelEN: string; sub: string }[] = [
+    { lang: 'it', flag: '🇮🇹', labelIT: 'Italiano', labelEN: 'Italian', sub: 'Continua in italiano' },
+    { lang: 'en', flag: '🇬🇧', labelIT: 'Inglese', labelEN: 'English', sub: 'Continue in English' },
+  ];
+
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', gap: 12 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        style={{ textAlign: 'center', marginBottom: 8 }}
+      >
+        <div style={{ fontSize: 36, marginBottom: 10 }}>🌍</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', fontFamily: '"Fraunces", Georgia, serif', lineHeight: 1.3 }}>
+          Scegli la lingua
+          <br />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', fontWeight: 400, fontFamily: 'system-ui' }}>Choose your language</span>
+        </div>
+      </motion.div>
+
+      <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+        {options.map((opt, i) => (
+          <motion.button
+            key={opt.lang}
+            type="button"
+            onClick={() => onPick(opt.lang)}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 + i * 0.08 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              flex: 1, borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.05)', padding: '20px 12px',
+              cursor: 'pointer', display: 'flex', flexDirection: 'column',
+              alignItems: 'center', gap: 6, transition: 'border-color 0.2s',
+            }}
+          >
+            <span style={{ fontSize: 32 }}>{opt.flag}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{opt.labelEN}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{opt.sub}</span>
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 interface OnboardingOverlayProps {
   onClose: () => void;
 }
 
 export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
-  const { t } = useLanguage();
+  const { t, setLang } = useLanguage();
+
+  // Show language picker if user has never set a language preference
+  const [showLangPicker] = useState(() => !localStorage.getItem('db_lang'));
+  const [langChosen, setLangChosen] = useState(!showLangPicker);
+
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
+
+  const handleLangPick = (l: Lang) => {
+    setLang(l);
+    setLangChosen(true);
+  };
 
   const current = STEPS[step];
   const isLast = step === STEPS.length - 1;
@@ -451,24 +512,48 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
         exit={{ opacity: 0, y: 24, scale: 0.96 }}
         transition={{ type: 'spring', stiffness: 340, damping: 32 }}
       >
-        {/* Skip / Close */}
-        <button
-          type="button"
-          onClick={finish}
-          className="absolute top-4 right-4 z-20 flex items-center gap-1.5 cursor-pointer"
-          style={{
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: 99, padding: '5px 10px 5px 8px',
-          }}
-        >
-          <X style={{ width: 12, height: 12, color: 'rgba(255,255,255,0.4)' }} />
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-            {t('onb.skip')}
-          </span>
-        </button>
+        {/* Skip / Close — hidden on lang picker */}
+        {langChosen && (
+          <button
+            type="button"
+            onClick={finish}
+            className="absolute top-4 right-4 z-20 flex items-center gap-1.5 cursor-pointer"
+            style={{
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 99, padding: '5px 10px 5px 8px',
+            }}
+          >
+            <X style={{ width: 12, height: 12, color: 'rgba(255,255,255,0.4)' }} />
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
+              {t('onb.skip')}
+            </span>
+          </button>
+        )}
 
-        {/* ── Illustration panel ── */}
-        <div
+        {/* ── Language picker (first-time only) ── */}
+        <AnimatePresence mode="wait">
+          {!langChosen && (
+            <motion.div
+              key="lang-picker"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{
+                minHeight: 320, position: 'relative', overflow: 'hidden',
+                background: 'linear-gradient(160deg, #1a1040, #090910)',
+              }}
+            >
+              {/* Soft glow */}
+              <div style={{
+                position: 'absolute', top: 0, inset: 0, pointerEvents: 'none',
+                background: 'radial-gradient(ellipse 80% 80% at 50% -10%, rgba(129,140,248,0.12), transparent 65%)',
+              }} />
+              <LanguagePickerStep onPick={handleLangPick} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Illustration panel (shown after lang is chosen) ── */}
+        {langChosen && <div
           style={{
             height: 218, position: 'relative', overflow: 'hidden',
             background: `linear-gradient(160deg, ${current.from} 0%, #090910 100%)`,
@@ -506,10 +591,10 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
               <IllustrationComponent />
             </motion.div>
           </AnimatePresence>
-        </div>
+        </div>}
 
-        {/* ── Text content ── */}
-        <div style={{ padding: '20px 24px 0' }}>
+        {/* ── Text content (only when lang is chosen) ── */}
+        {langChosen && <div style={{ padding: '20px 24px 0' }}>
           {/* Step counter */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -546,10 +631,10 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
               </p>
             </motion.div>
           </AnimatePresence>
-        </div>
+        </div>}
 
-        {/* ── Footer: dots + buttons ── */}
-        <div style={{ padding: '20px 24px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* ── Footer: dots + buttons (only when lang is chosen) ── */}
+        {langChosen && <div style={{ padding: '20px 24px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
           {/* Progress dots */}
           <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -605,7 +690,7 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
               {!isLast && <ChevronRight style={{ width: 14, height: 14 }} />}
             </button>
           </div>
-        </div>
+        </div>}
       </motion.div>
     </motion.div>
   );
