@@ -1,6 +1,64 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Trophy, Clock, LogOut, Star, Zap, Download, Pencil, Check, ImageIcon, User } from 'lucide-react';
+import { X, Trophy, Clock, LogOut, Star, Zap, Download, Pencil, Check, ImageIcon, User, Smile } from 'lucide-react';
+
+// ── Avatar helpers ────────────────────────────────────────────────────────────
+export const EMOJI_AVATARS = ['🦁', '🐻', '🐼', '🦊', '🐯', '🦅', '🐬', '🦋', '🌟', '🚀', '🎯', '⚡'];
+const EMOJI_BG: Record<string, string> = {
+  '🦁':'#d97706','🐻':'#78350f','🐼':'#1f2937','🦊':'#c2410c','🐯':'#b45309',
+  '🦅':'#1d4ed8','🐬':'#0369a1','🦋':'#7c3aed','🌟':'#ca8a04','🚀':'#6d28d9',
+  '🎯':'#dc2626','⚡':'#d97706',
+};
+
+export function isEmojiAvatar(url: string | undefined): boolean {
+  if (!url) return false;
+  return !url.includes('/') && !url.includes('.') && url.length <= 4;
+}
+
+export function AvatarDisplay({
+  photoURL, displayName, size = 80, className = '',
+}: { photoURL?: string; displayName?: string; size?: number; className?: string }) {
+  const initials = (displayName || 'U').split(' ').slice(0, 2).map(w => w[0]?.toUpperCase()).join('');
+  const s = size;
+  const fontSize = s * 0.4;
+
+  if (isEmojiAvatar(photoURL)) {
+    return (
+      <div
+        className={className}
+        style={{
+          width: s, height: s, borderRadius: s * 0.25,
+          background: EMOJI_BG[photoURL!] || '#4f46e5',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: fontSize, lineHeight: 1, flexShrink: 0, userSelect: 'none',
+        }}
+      >{photoURL}</div>
+    );
+  }
+  if (photoURL?.startsWith('http')) {
+    return (
+      <img
+        src={photoURL} alt="Avatar"
+        className={className}
+        style={{ width: s, height: s, borderRadius: s * 0.25, objectFit: 'cover', flexShrink: 0 }}
+        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+    );
+  }
+  return (
+    <div
+      className={className}
+      style={{
+        width: s, height: s, borderRadius: s * 0.25,
+        background: 'rgba(99,102,241,0.15)',
+        border: '2px solid rgba(99,102,241,0.2)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: s * 0.28, fontWeight: 600, color: '#a5b4fc',
+        flexShrink: 0, userSelect: 'none',
+      }}
+    >{initials || <User style={{ width: s * 0.4, height: s * 0.4, color: '#818cf8' }} />}</div>
+  );
+}
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -24,6 +82,7 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhoto, setEditPhoto] = useState('');
+  const [avatarTab, setAvatarTab] = useState<'emoji' | 'url'>('emoji');
   const [saving, setSaving] = useState(false);
 
   useEscapeKey(onClose);
@@ -92,6 +151,7 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
   const handleStartEdit = () => {
     setEditName(profile?.displayName || '');
     setEditPhoto(profile?.photoURL || '');
+    setAvatarTab(isEmojiAvatar(profile?.photoURL) ? 'emoji' : 'emoji');
     setEditMode(true);
   };
 
@@ -149,27 +209,21 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
           <div className="space-y-8">
             {/* User header */}
             <div className="flex items-start gap-5">
-              {/* Avatar with edit overlay */}
+              {/* Avatar */}
               <div className="relative shrink-0 group">
-                {(editMode ? editPhoto : profile?.photoURL) ? (
-                  <img
-                    src={editMode ? editPhoto : profile!.photoURL}
-                    alt="Avatar"
-                    className="w-20 h-20 rounded-2xl border-2 border-zinc-700 object-cover"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                ) : (
-                  <div className="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center text-2xl font-serif text-white border-2 border-zinc-700">
-                    {(editMode ? editName : profile?.displayName)?.charAt(0).toUpperCase() || <User className="w-8 h-8 text-white/40" />}
-                  </div>
-                )}
+                <AvatarDisplay
+                  photoURL={editMode ? editPhoto : profile?.photoURL}
+                  displayName={editMode ? editName : profile?.displayName}
+                  size={80}
+                  className="border-2 border-zinc-700"
+                />
                 {!editMode && (
                   <button
                     onClick={handleStartEdit}
-                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-zinc-700 border border-zinc-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Modifica profilo"
+                    className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-indigo-600 border-2 border-zinc-900 flex items-center justify-center transition-all shadow-lg"
+                    title="Modifica avatar"
                   >
-                    <Pencil className="w-3 h-3 text-white/70" />
+                    <Pencil className="w-3 h-3 text-white" />
                   </button>
                 )}
               </div>
@@ -178,6 +232,7 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
                 {editMode ? (
                   /* ── Edit fields ─────────────────────────────────────────── */
                   <div className="space-y-3">
+                    {/* Name */}
                     <div>
                       <label className="text-white/40 text-[10px] font-mono uppercase tracking-wider block mb-1">Nome / Nickname</label>
                       <input
@@ -188,18 +243,53 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
                         className="w-full bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/20"
                       />
                     </div>
+
+                    {/* Avatar picker */}
                     <div>
-                      <label className="text-white/40 text-[10px] font-mono uppercase tracking-wider block mb-1">
-                        <ImageIcon className="w-3 h-3 inline mr-1" />URL foto / logo
-                      </label>
-                      <input
-                        type="url"
-                        value={editPhoto}
-                        onChange={e => setEditPhoto(e.target.value)}
-                        placeholder="https://..."
-                        className="w-full bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/20"
-                      />
+                      <label className="text-white/40 text-[10px] font-mono uppercase tracking-wider block mb-2">Avatar</label>
+                      {/* Tabs */}
+                      <div className="flex gap-1 mb-3 p-1 bg-zinc-800 rounded-xl w-fit">
+                        <button
+                          onClick={() => setAvatarTab('emoji')}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${avatarTab === 'emoji' ? 'bg-zinc-600 text-white' : 'text-white/40 hover:text-white'}`}
+                        >
+                          <Smile className="w-3 h-3" /> Emoji
+                        </button>
+                        <button
+                          onClick={() => setAvatarTab('url')}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${avatarTab === 'url' ? 'bg-zinc-600 text-white' : 'text-white/40 hover:text-white'}`}
+                        >
+                          <ImageIcon className="w-3 h-3" /> URL foto
+                        </button>
+                      </div>
+
+                      {avatarTab === 'emoji' ? (
+                        <div className="grid grid-cols-6 gap-2">
+                          {EMOJI_AVATARS.map(emoji => (
+                            <button
+                              key={emoji}
+                              onClick={() => setEditPhoto(emoji)}
+                              className={`aspect-square rounded-xl text-2xl flex items-center justify-center transition-all border-2 ${
+                                editPhoto === emoji
+                                  ? 'border-indigo-500 scale-110 shadow-lg shadow-indigo-500/30'
+                                  : 'border-transparent bg-zinc-800 hover:bg-zinc-700 hover:scale-105'
+                              }`}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <input
+                          type="url"
+                          value={isEmojiAvatar(editPhoto) ? '' : editPhoto}
+                          onChange={e => setEditPhoto(e.target.value)}
+                          placeholder="https://..."
+                          className="w-full bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/20"
+                        />
+                      )}
                     </div>
+
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={handleSaveEdit}

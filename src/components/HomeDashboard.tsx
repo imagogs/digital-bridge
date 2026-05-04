@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Zap, BookOpen, TrendingUp, Flame, Trophy,
   Bell, Pin, Info, CheckCircle2, RefreshCw,
-  ChevronRight, Library, User, Clock, Target,
+  ChevronRight, Library, User, Clock, Target, Pencil,
 } from 'lucide-react';
+import { AvatarDisplay } from './ProfileOverlay';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { tools } from '../data/tools';
@@ -231,20 +232,17 @@ export function HomeDashboard({
               className="relative shrink-0 group"
               title="Modifica profilo"
             >
-              {profile?.photoURL ? (
-                <img
-                  src={profile.photoURL}
-                  alt="Avatar"
-                  className="w-20 h-20 rounded-2xl border-2 border-white/10 object-cover
-                             group-hover:border-indigo-400/50 transition-colors shadow-lg"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-2xl bg-indigo-500/15 border-2 border-indigo-500/20
-                               flex items-center justify-center text-2xl font-serif text-indigo-300
-                               group-hover:border-indigo-400/50 transition-colors select-none shadow-lg">
-                  {initials || <User className="w-8 h-8 text-indigo-400" />}
-                </div>
-              )}
+              <AvatarDisplay
+                photoURL={profile?.photoURL}
+                displayName={profile?.displayName}
+                size={80}
+              />
+              {/* Always-visible edit badge */}
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-indigo-600
+                              border-2 border-[#0a0a0a] flex items-center justify-center
+                              shadow-lg group-hover:bg-indigo-500 transition-colors">
+                <Pencil className="w-3 h-3 text-white" />
+              </div>
             </button>
 
             {/* Name + greeting — vertically centered */}

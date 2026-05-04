@@ -38,7 +38,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (data) {
-        setProfile(data as UserProfile);
+        // Sync Google photo if the profile has no photo yet
+        const googlePhoto = u.user_metadata?.avatar_url || u.user_metadata?.picture || '';
+        if (!data.photoURL && googlePhoto) {
+          const updated = { ...data, photoURL: googlePhoto } as UserProfile;
+          setProfile(updated);
+          supabase.from('profiles').update({ photoURL: googlePhoto }).eq('id', u.id).then(() => {});
+        } else {
+          setProfile(data as UserProfile);
+        }
         return;
       }
 
