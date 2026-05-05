@@ -248,6 +248,15 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
               <Pencil className="w-4 h-4" />
             </button>
           )}
+          {!editMode && (
+            <button
+              onClick={signOut}
+              title={t('profile.signOut')}
+              className="p-2 text-white/40 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={onClose}
             className="p-2 text-white/40 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
@@ -279,7 +288,7 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="space-y-8">
             {/* User header */}
-            <div className="flex items-start gap-5">
+            <div className="flex items-start gap-5 pr-32">
               {/* Avatar */}
               <div className="relative shrink-0 group">
                 <AvatarDisplay
@@ -434,15 +443,6 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
                 )}
               </div>
 
-              {!editMode && (
-                <button
-                  onClick={signOut}
-                  title={t('profile.signOut')}
-                  className="p-2.5 text-white/40 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors shrink-0"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
             </div>
 
             {/* Language & settings row */}
