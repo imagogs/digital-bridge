@@ -287,7 +287,7 @@ const it = {
   'onb.sofia.title': 'Sofia, la tua Insegnante AI',
   'onb.sofia.desc': 'In qualsiasi momento puoi chiedere aiuto a Sofia. Spiega i concetti, risponde alle domande e ti guida passo dopo passo.',
   'onb.nav.title': 'La Barra di Navigazione',
-  'onb.nav.desc': 'In basso trovi sempre la barra di navigazione. Usa le 4 sezioni per muoverti nell\'app: Home, Biblioteca, Progressi e Certificazioni. L\'icona a destra apre il tuo profilo e le impostazioni.',
+  'onb.nav.desc': 'Tocca ogni icona per scoprire a cosa serve. La barra è sempre visibile — è la tua bussola nell\'app.',
   'onb.skip': 'Salta',
   'onb.next': 'Avanti',
   'onb.prev': 'Indietro',

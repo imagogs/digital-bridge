@@ -160,7 +160,10 @@ export function AIChat({ currentModule, open, onClose }: AIChatProps) {
     try {
       const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-      const contents = messages.map(m => ({
+      // Skip leading model messages — Gemini requires history to start with 'user'
+      const firstUserIdx = messages.findIndex(m => m.role === 'user');
+      const historyForApi = firstUserIdx >= 0 ? messages.slice(firstUserIdx) : [];
+      const contents = historyForApi.map(m => ({
         role: m.role,
         parts: [{ text: m.content }],
       }));

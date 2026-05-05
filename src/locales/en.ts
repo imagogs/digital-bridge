@@ -287,7 +287,7 @@ const en = {
   'onb.sofia.title': 'Sofia, your AI Teacher',
   'onb.sofia.desc': 'At any time you can ask Sofia for help. She explains concepts, answers your questions and guides you step by step.',
   'onb.nav.title': 'The Navigation Bar',
-  'onb.nav.desc': 'The bar at the bottom is always visible. Use the 4 tabs to move around: Home, Library, Progress and Certifications. The icon on the right opens your profile and settings.',
+  'onb.nav.desc': 'Tap each icon below to discover what each section does. The bar is always visible — your compass inside the app.',
   'onb.skip': 'Skip',
   'onb.next': 'Next',
   'onb.prev': 'Back',

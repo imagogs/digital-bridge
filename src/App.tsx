@@ -491,19 +491,16 @@ export default function App() {
               currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
             }`} />
 
-            {/* AI Chat button */}
+            {/* AI Chat button — visually distinct */}
             <button
               type="button"
               data-tour="nav-chat"
               onClick={() => setShowChat(true)}
               title="Sofia — AI Teacher"
-              className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
-                currentSection === 'library'
-                  ? 'text-[#1d1933]/50 hover:text-[#1d1933] hover:bg-black/[0.05]'
-                  : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
-              }`}
+              className="relative shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer bg-blue-500/20 hover:bg-blue-500/35 text-blue-400 hover:text-blue-300"
             >
               <MessageSquare className="w-4 h-4" />
+              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[6px] font-bold px-[3px] py-[1px] rounded-full leading-tight tracking-wide">AI</span>
             </button>
 
             {/* Profile / Settings icon */}

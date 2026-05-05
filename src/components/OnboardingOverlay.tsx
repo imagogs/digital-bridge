@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -389,65 +389,149 @@ function SofiaIllustration() {
   );
 }
 
-// ── Nav illustration ───────────────────────────────────────────────────────────
+// ── Nav illustration — interactive ────────────────────────────────────────────
 function NavIllustration() {
-  const items = [
-    { icon: '⊞', label: 'Home' },
-    { icon: '📚', label: 'Biblioteca' },
-    { icon: '📈', label: 'Progressi' },
-    { icon: '🎓', label: 'Certificati' },
-  ];
+  const { lang } = useLanguage();
+  const [active, setActive] = useState(0);
+
+  const items = lang === 'it' ? [
+    { emoji: '⊞', label: 'Home',          desc: 'Il tuo pannello principale: progressi, streak e il modulo consigliato.' },
+    { emoji: '📚', label: 'Biblioteca',    desc: 'Scegli un argomento e accedi alle lezioni del tuo percorso.' },
+    { emoji: '📈', label: 'Progressi',     desc: 'Vedi le tue ore di studio, il livello raggiunto e la tua attività.' },
+    { emoji: '🎓', label: 'Certificati',   desc: "Supera l'esame finale di ogni modulo e ottieni il tuo certificato ufficiale." },
+    { emoji: '💬', label: 'Sofia AI',      desc: 'Chatta con Sofia, la tua insegnante AI. Chiedi aiuto in qualsiasi momento.', isAI: true },
+    { emoji: '⚙️', label: 'Impostazioni', desc: 'Modifica il profilo, cambia lingua e gestisci il tuo account.' },
+  ] : [
+    { emoji: '⊞', label: 'Home',         desc: 'Your dashboard: progress, streak and recommended module.' },
+    { emoji: '📚', label: 'Library',      desc: 'Choose a topic and access lessons for your learning path.' },
+    { emoji: '📈', label: 'Progress',     desc: 'See your study hours, level and daily activity.' },
+    { emoji: '🎓', label: 'Certs',        desc: 'Pass the final exam for each module and earn your official certificate.' },
+    { emoji: '💬', label: 'Sofia AI',     desc: 'Chat with Sofia, your AI teacher. Ask for help at any time.', isAI: true },
+    { emoji: '⚙️', label: 'Settings',    desc: 'Edit your profile, change language and manage your account.' },
+  ] as { emoji: string; label: string; desc: string; isAI?: boolean }[];
+
+  // Auto-cycle through items
+  useEffect(() => {
+    const t = setTimeout(() => setActive(a => (a + 1) % items.length), 2400);
+    return () => clearTimeout(t);
+  }, [active, items.length]);
+
+  const cur = items[active];
+
   return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '16px 24px' }}>
-      {/* Phone frame */}
-      <motion.div
-        initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 24 }}
-        style={{ width: '100%', maxWidth: 260, background: 'rgba(255,255,255,0.04)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}
-      >
-        {/* Screen area */}
-        <div style={{ height: 72, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', letterSpacing: '0.2em' }}>CONTENUTO APP</span>
-        </div>
-        {/* Nav bar */}
-        <div style={{ background: 'rgba(20,20,30,0.95)', borderTop: '1px solid rgba(255,255,255,0.07)', padding: '8px 4px', display: 'flex', alignItems: 'center', gap: 2 }}>
-          {items.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 + i * 0.08 }}
-              style={{
-                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                padding: '6px 2px', borderRadius: 10,
-                background: i === 1 ? 'rgba(99,102,241,0.9)' : 'transparent',
-              }}
-            >
-              <span style={{ fontSize: i === 1 ? 13 : 12 }}>{item.icon}</span>
-              <span style={{ fontSize: 7, color: i === 1 ? '#fff' : 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{item.label}</span>
-            </motion.div>
-          ))}
-          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', margin: '0 2px' }} />
-          {/* Profile icon */}
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', padding: '10px 16px 8px', gap: 8 }}>
+      {/* Description of active item */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 4px' }}>
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-            style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(99,102,241,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+            key={active}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22 }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}
           >
-            <span style={{ fontSize: 13 }}>👤</span>
+            <div style={{
+              fontSize: 28,
+              filter: cur.isAI ? 'drop-shadow(0 0 10px rgba(59,130,246,0.7))' : undefined,
+            }}>{cur.emoji}</div>
+            <div style={{
+              fontSize: 13, fontWeight: 700, color: cur.isAI ? '#60a5fa' : '#fff',
+              letterSpacing: '0.02em',
+            }}>{cur.label}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.48)', lineHeight: 1.55 }}>{cur.desc}</div>
           </motion.div>
-          {/* Help icon */}
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
-            style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-          >
-            <span style={{ fontSize: 13, opacity: 0.4 }}>❓</span>
-          </motion.div>
-        </div>
-      </motion.div>
-      {/* Arrow pointing down */}
+        </AnimatePresence>
+      </div>
+
+      {/* Arrow */}
       <motion.div
-        animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-        style={{ fontSize: 18, opacity: 0.4 }}
-      >↑</motion.div>
+        animate={{ y: [0, 3, 0] }}
+        transition={{ repeat: Infinity, duration: 1.3, ease: 'easeInOut' }}
+        style={{ textAlign: 'center', fontSize: 14, opacity: 0.35 }}
+      >↓</motion.div>
+
+      {/* Nav bar replica */}
+      <div style={{
+        background: '#111111', borderRadius: 14, padding: '6px 5px',
+        display: 'flex', alignItems: 'center', gap: 1,
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
+      }}>
+        {/* 4 main section tabs */}
+        {items.slice(0, 4).map((item, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setActive(i)}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              padding: '5px 2px', borderRadius: 9, border: 'none', cursor: 'pointer',
+              background: active === i ? '#6366f1' : 'transparent',
+              transition: 'all 0.18s',
+              boxShadow: active === i ? '0 2px 10px rgba(99,102,241,0.4)' : 'none',
+            }}
+          >
+            <span style={{ fontSize: 11 }}>{item.emoji}</span>
+            <span style={{ fontSize: 6.5, color: active === i ? '#fff' : 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontWeight: 600 }}>
+              {item.label}
+            </span>
+          </button>
+        ))}
+
+        <div style={{ width: 1, height: 18, background: 'rgba(255,255,255,0.1)', margin: '0 2px', flexShrink: 0 }} />
+
+        {/* AI chat button — visually distinct */}
+        <button
+          type="button"
+          onClick={() => setActive(4)}
+          style={{
+            width: 28, height: 28, borderRadius: 8, border: 'none', cursor: 'pointer',
+            background: active === 4 ? 'rgba(59,130,246,0.85)' : 'rgba(59,130,246,0.18)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', flexShrink: 0,
+            transition: 'all 0.18s',
+            boxShadow: active === 4 ? '0 0 12px rgba(59,130,246,0.55)' : 'none',
+          }}
+        >
+          <span style={{ fontSize: 11 }}>💬</span>
+          <div style={{
+            position: 'absolute', top: -3, right: -3,
+            background: '#3b82f6', borderRadius: 99,
+            fontSize: 5, color: '#fff', padding: '1px 3px', fontWeight: 800,
+            fontFamily: 'monospace', lineHeight: 1.2, letterSpacing: '0.05em',
+          }}>AI</div>
+        </button>
+
+        {/* Settings button */}
+        <button
+          type="button"
+          onClick={() => setActive(5)}
+          style={{
+            width: 28, height: 28, borderRadius: 8, border: 'none', cursor: 'pointer',
+            background: active === 5 ? 'rgba(255,255,255,0.12)' : 'transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            transition: 'all 0.18s',
+          }}
+        >
+          <span style={{ fontSize: 11 }}>⚙️</span>
+        </button>
+      </div>
+
+      {/* Dot indicators */}
+      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', paddingBottom: 2 }}>
+        {items.map((_, i) => (
+          <div
+            key={i}
+            style={{
+              height: 4, borderRadius: 99,
+              width: active === i ? 16 : 4,
+              background: active === i ? '#6366f1' : 'rgba(255,255,255,0.15)',
+              transition: 'all 0.25s',
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
