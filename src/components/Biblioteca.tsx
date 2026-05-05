@@ -738,9 +738,11 @@ interface BibliotecaProps {
   onOpenModule?: (id: string) => void;
   onLessonComplete: (lessonId: string, xp: number) => void;
   onOpenProfile?: () => void;
+  onLessonOpen?: () => void;
+  onLessonClose?: () => void;
 }
 
-export function Biblioteca({ completedLessons, earnedCertificates, onLessonComplete, onOpenProfile }: BibliotecaProps) {
+export function Biblioteca({ completedLessons, earnedCertificates, onLessonComplete, onOpenProfile, onLessonOpen, onLessonClose }: BibliotecaProps) {
   const { profile } = useAuth();
   const [activeGroup, setActiveGroup] = useState<Group | null>(() => {
     const id = sessionStorage.getItem('db_activeGroup');
@@ -748,6 +750,12 @@ export function Biblioteca({ completedLessons, earnedCertificates, onLessonCompl
   });
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [transitioning, setTransitioning] = useState(false);
+
+  // Notify parent when lesson opens/closes (to hide nav bar)
+  useEffect(() => {
+    if (activeLesson) onLessonOpen?.();
+    else onLessonClose?.();
+  }, [activeLesson]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useMemo(() => {
     if (typeof document !== 'undefined' && !document.getElementById('biblioteca-room-styles')) {

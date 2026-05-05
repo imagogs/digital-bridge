@@ -162,7 +162,7 @@ export function NavSpotlightTour({ onClose }: { onClose: () => void }) {
           {/* Step counter + close */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <span style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.22em', color: current.color, fontWeight: 700 }}>
-              {step + 1} / {STEPS.length}
+              {6 + step + 1} / 12
             </span>
             <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'rgba(255,255,255,0.25)', display: 'flex' }}>
               <X style={{ width: 12, height: 12 }} />

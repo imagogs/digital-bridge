@@ -537,6 +537,9 @@ function NavIllustration() {
 }
 
 // ── Step config ────────────────────────────────────────────────────────────────
+// Total tour = 6 (modal) + 6 (nav spotlight) = 12 steps
+const TOTAL_STEPS = 12;
+
 const STEPS = [
   { key: 'welcome',  accent: '#818cf8', from: '#1a174a', Illustration: WelcomeIllustration  },
   { key: 'library',  accent: '#60a5fa', from: '#0c1a38', Illustration: LibraryIllustration  },
@@ -544,7 +547,6 @@ const STEPS = [
   { key: 'progress', accent: '#fb923c', from: '#2d1600', Illustration: ProgressIllustration },
   { key: 'cert',     accent: '#fbbf24', from: '#2a1a00', Illustration: CertIllustration     },
   { key: 'sofia',    accent: '#a78bfa', from: '#1a0b3d', Illustration: SofiaIllustration    },
-  { key: 'nav',      accent: '#6366f1', from: '#0f1040', Illustration: NavIllustration      },
 ] as const;
 
 // ── Language picker (step 0 if no language has been set yet) ──────────────────
@@ -755,7 +757,7 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
                 transition: 'color 0.3s ease',
               }}
             >
-              {step + 1} / {STEPS.length}
+              {step + 1} / {TOTAL_STEPS}
             </motion.div>
           </AnimatePresence>
 
@@ -784,17 +786,22 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
         {/* ── Footer: dots + buttons (only when lang is chosen) ── */}
         {langChosen && <div style={{ padding: '20px 24px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-          {/* Progress dots */}
-          <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-            {STEPS.map((s, i) => (
+          {/* Progress dots — 12 total (6 modal + 6 spotlight) */}
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
               <button
                 key={i}
                 type="button"
-                onClick={() => goTo(i)}
+                onClick={() => i < STEPS.length ? goTo(i) : undefined}
                 style={{
-                  height: 6, borderRadius: 99, border: 'none', padding: 0, cursor: 'pointer',
-                  width: i === step ? 20 : 6,
-                  background: i === step ? current.accent : 'rgba(255,255,255,0.12)',
+                  height: 5, borderRadius: 99, border: 'none', padding: 0,
+                  cursor: i < STEPS.length ? 'pointer' : 'default',
+                  width: i === step ? 18 : 5,
+                  background: i === step
+                    ? current.accent
+                    : i < STEPS.length
+                    ? 'rgba(255,255,255,0.15)'
+                    : 'rgba(255,255,255,0.06)',
                   transition: 'all 0.3s ease',
                 }}
               />
@@ -818,24 +825,23 @@ export function OnboardingOverlay({ onClose }: OnboardingOverlayProps) {
               </motion.button>
             )}
 
+            {/* Always "Avanti" — last slide closes modal → spotlight tour starts */}
             <button
               type="button"
               onClick={isLast ? finish : () => go(1)}
               style={{
                 height: 38, borderRadius: 12, border: `1px solid ${current.accent}50`,
-                padding: isLast ? '0 20px' : '0 16px',
-                background: isLast
-                  ? `linear-gradient(135deg, ${current.accent}dd, ${current.accent}99)`
-                  : `${current.accent}18`,
-                color: isLast ? '#fff' : current.accent,
+                padding: '0 16px',
+                background: `linear-gradient(135deg, ${current.accent}dd, ${current.accent}88)`,
+                color: '#fff',
                 fontSize: 13, fontWeight: 600, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 5,
                 transition: 'all 0.25s ease',
-                boxShadow: isLast ? `0 4px 20px ${current.accent}35` : 'none',
+                boxShadow: `0 4px 20px ${current.accent}35`,
               }}
             >
-              {isLast ? t('onb.start') : t('onb.next')}
-              {!isLast && <ChevronRight style={{ width: 14, height: 14 }} />}
+              {t('onb.next')}
+              <ChevronRight style={{ width: 14, height: 14 }} />
             </button>
           </div>
         </div>}

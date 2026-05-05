@@ -170,7 +170,7 @@ export function AIChat({ currentModule, open, onClose }: AIChatProps) {
       contents.push({ role: 'user', parts: [{ text: userMessage.content }] });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
+        model: 'gemini-1.5-flash',
         contents: contents as any,
         config: { systemInstruction: getSystemPrompt() },
       });

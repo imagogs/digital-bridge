@@ -189,6 +189,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showNavTour, setShowNavTour] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [lessonOpen, setLessonOpen] = useState(false);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastStudyDate: null });
 
   // Load progress from Supabase
@@ -326,6 +327,8 @@ export default function App() {
             earnedCertificates={earnedCertificates}
             onLessonComplete={handleLessonComplete}
             onOpenProfile={() => setShowProfile(true)}
+            onLessonOpen={() => setLessonOpen(true)}
+            onLessonClose={() => setLessonOpen(false)}
           />
         )}
 
@@ -462,7 +465,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Bottom navigation bar */}
-      {!selectedToolId && (
+      {!selectedToolId && !lessonOpen && (
         <motion.div
           className="fixed sm:absolute bottom-0 sm:bottom-6 inset-x-0 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-30 px-3 sm:px-0"
           style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
