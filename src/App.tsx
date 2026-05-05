@@ -541,7 +541,7 @@ export default function App() {
             <button
               type="button"
               data-tour="nav-help"
-              onClick={() => setShowNavTour(true)}
+              onClick={() => setShowOnboarding(true)}
               title={t('onb.replayBtn')}
               className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 currentSection === 'library'

@@ -138,99 +138,78 @@ export function NavSpotlightTour({ onClose }: { onClose: () => void }) {
         }}
       />
 
-      {/* ── Callout bubble ── */}
+      {/* ── Callout bubble — compact, centered above spotlight ── */}
       <AnimatePresence mode="wait">
         <motion.div
           key={`callout-${step}`}
-          initial={{ opacity: 0, y: 12, scale: 0.96 }}
+          initial={{ opacity: 0, y: 10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.22 }}
+          exit={{ opacity: 0, y: -6, scale: 0.97 }}
+          transition={{ duration: 0.2 }}
           style={{
             position: 'absolute',
             bottom: calloutBottomPx,
-            left: 16, right: 16,
-            background: 'linear-gradient(160deg, #12121e, #0e0e18)',
-            borderRadius: 22,
-            padding: '20px 20px 16px',
-            border: `1px solid ${current.color}38`,
-            boxShadow: `0 16px 60px rgba(0,0,0,0.85), 0 0 0 1px ${current.color}18`,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: `min(300px, calc(100vw - 32px))`,
+            background: 'linear-gradient(160deg, #14141f, #0d0d17)',
+            borderRadius: 18,
+            padding: '14px 16px 12px',
+            border: `1px solid ${current.color}40`,
+            boxShadow: `0 8px 40px rgba(0,0,0,0.9), 0 0 0 1px ${current.color}15`,
           }}
         >
-          {/* Step counter */}
-          <div style={{ fontSize: 10, fontFamily: 'monospace', letterSpacing: '0.22em', color: current.color, marginBottom: 6, fontWeight: 700 }}>
-            {step + 1} / {STEPS.length}
+          {/* Step counter + close */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <span style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: '0.22em', color: current.color, fontWeight: 700 }}>
+              {step + 1} / {STEPS.length}
+            </span>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'rgba(255,255,255,0.25)', display: 'flex' }}>
+              <X style={{ width: 12, height: 12 }} />
+            </button>
           </div>
 
           {/* Title */}
-          <h3 style={{ margin: '0 0 8px', fontFamily: '"Fraunces", Georgia, serif', fontSize: 21, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
+          <h3 style={{ margin: '0 0 5px', fontFamily: '"Fraunces", Georgia, serif', fontSize: 17, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
             {lang === 'it' ? current.titleIT : current.titleEN}
           </h3>
 
           {/* Description */}
-          <p style={{ margin: '0 0 14px', fontSize: 13.5, color: 'rgba(255,255,255,0.48)', lineHeight: 1.6 }}>
+          <p style={{ margin: '0 0 10px', fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.55 }}>
             {lang === 'it' ? current.descIT : current.descEN}
           </p>
 
-          {/* Progress dots */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
-            {STEPS.map((_, i) => (
-              <div key={i} style={{
-                height: 4, borderRadius: 99,
-                width: i === step ? 18 : 4,
-                background: i === step ? current.color : 'rgba(255,255,255,0.12)',
-                transition: 'all 0.25s',
-              }} />
-            ))}
-          </div>
-
-          {/* Buttons */}
+          {/* Progress dots + Next button */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button
-              onClick={onClose}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 12, color: 'rgba(255,255,255,0.28)',
-                padding: '6px 0', fontFamily: 'monospace', letterSpacing: '0.08em',
-              }}
-            >
-              {lang === 'it' ? 'Salta' : 'Skip'}
-            </button>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {STEPS.map((_, i) => (
+                <div key={i} style={{
+                  height: 3, borderRadius: 99,
+                  width: i === step ? 14 : 3,
+                  background: i === step ? current.color : 'rgba(255,255,255,0.12)',
+                  transition: 'all 0.25s',
+                }} />
+              ))}
+            </div>
             <button
               onClick={goNext}
               style={{
                 background: `linear-gradient(135deg, ${current.color}ee, ${current.color}99)`,
                 border: 'none', cursor: 'pointer',
-                borderRadius: 12, padding: '10px 22px',
-                fontSize: 13, fontWeight: 600, color: '#fff',
-                display: 'flex', alignItems: 'center', gap: 5,
-                boxShadow: `0 4px 18px ${current.color}45`,
+                borderRadius: 10, padding: '7px 16px',
+                fontSize: 12, fontWeight: 600, color: '#fff',
+                display: 'flex', alignItems: 'center', gap: 4,
+                boxShadow: `0 3px 12px ${current.color}40`,
               }}
             >
               {isLast
                 ? (lang === 'it' ? '🎉 Inizia!' : '🎉 Start!')
                 : (lang === 'it' ? 'Avanti' : 'Next')}
-              {!isLast && <ChevronRight style={{ width: 14, height: 14 }} />}
+              {!isLast && <ChevronRight style={{ width: 13, height: 13 }} />}
             </button>
           </div>
         </motion.div>
       </AnimatePresence>
-
-      {/* Top-right skip button */}
-      <button
-        onClick={onClose}
-        style={{
-          position: 'absolute', top: 16, right: 16,
-          background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: 99, padding: '6px 12px 6px 10px',
-          display: 'flex', alignItems: 'center', gap: 5,
-          cursor: 'pointer', color: 'rgba(255,255,255,0.35)',
-          fontSize: 11, fontFamily: 'monospace',
-        }}
-      >
-        <X style={{ width: 11, height: 11 }} />
-        {lang === 'it' ? 'Salta' : 'Skip'}
-      </button>
     </motion.div>
   );
 }
