@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { LayoutDashboard, BookOpen, TrendingUp, GraduationCap, Users, Loader2, HelpCircle } from 'lucide-react';
 import { ModuleOverlay } from './components/ModuleOverlay';
 import { AIChat } from './components/AIChat';
-import { ProfileOverlay } from './components/ProfileOverlay';
+import { ProfileOverlay, AvatarDisplay } from './components/ProfileOverlay';
 import { AssessmentOverlay } from './components/AssessmentOverlay';
 import { LoginScreen } from './components/LoginScreen';
 import { LanguageToggle } from './components/LanguageToggle';
@@ -175,7 +175,7 @@ function CertificationSection({
 
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const { t, lang, setLang } = useLanguage();
 
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
@@ -489,25 +489,24 @@ export default function App() {
               currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
             }`} />
 
-            {/* Language toggle — always visible */}
-            {(['it', 'en'] as const).map(l => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLang(l)}
-                className={`px-3 py-2.5 rounded-xl text-[10px] font-bold tracking-widest transition-all duration-200 cursor-pointer ${
-                  lang === l
-                    ? currentSection === 'library'
-                      ? 'bg-[#1d1933] text-white shadow-sm'
-                      : 'bg-white text-black shadow-sm'
-                    : currentSection === 'library'
-                    ? 'text-[#1d1933]/35 hover:text-[#1d1933] hover:bg-black/[0.05]'
-                    : 'text-white/35 hover:text-white hover:bg-white/[0.06]'
-                }`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
+            {/* Profile icon */}
+            <button
+              type="button"
+              data-tour="nav-profile"
+              onClick={() => setShowProfile(true)}
+              title="Profilo & Impostazioni"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden ${
+                currentSection === 'library'
+                  ? 'hover:bg-black/[0.05]'
+                  : 'hover:bg-white/[0.06]'
+              }`}
+            >
+              <AvatarDisplay
+                photoURL={profile?.photoURL}
+                displayName={profile?.displayName}
+                size={32}
+              />
+            </button>
 
             {/* Divider */}
             <div className={`w-px h-5 mx-0.5 rounded-full ${
@@ -517,6 +516,7 @@ export default function App() {
             {/* Help / Tutorial button */}
             <button
               type="button"
+              data-tour="nav-help"
               onClick={() => setShowOnboarding(true)}
               title={t('onb.replayBtn')}
               className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${

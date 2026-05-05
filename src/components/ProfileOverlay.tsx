@@ -1,6 +1,35 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Trophy, Clock, LogOut, Star, Zap, Download, Pencil, Check, ImageIcon, User, Smile } from 'lucide-react';
+import { X, Trophy, Clock, LogOut, Star, Zap, Download, Pencil, Check, ImageIcon, User, Smile, Globe, Camera } from 'lucide-react';
+
+// ── Image helpers ─────────────────────────────────────────────────────────────
+async function compressImage(file: File, maxPx = 400): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b => resolve(b!), 'image/jpeg', 0.85);
+    };
+    img.src = url;
+  });
+}
+
+async function uploadAvatarFile(file: File, userId: string, supabaseClient: any): Promise<string> {
+  const compressed = await compressImage(file);
+  const path = `${userId}/avatar.jpg`;
+  const { error } = await supabaseClient.storage
+    .from('avatars')
+    .upload(path, compressed, { upsert: true, contentType: 'image/jpeg' });
+  if (error) throw error;
+  const { data } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+  return `${data.publicUrl}?t=${Date.now()}`;
+}
 
 // ── Avatar helpers ────────────────────────────────────────────────────────────
 export const EMOJI_AVATARS = ['🦁', '🐻', '🐼', '🦊', '🐯', '🦅', '🐬', '🦋', '🌟', '🚀', '🎯', '⚡'];
@@ -73,7 +102,7 @@ const moduleLabels = Object.fromEntries(baseTools.map(t => [t.id, t.name]));
 
 export function ProfileOverlay({ onClose }: { onClose: () => void }) {
   const { user, profile, signInWithGoogle, signOut, updateProfile } = useAuth();
-  const { t, lang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const [chartData, setChartData] = useState<{ topic: string; ore: number }[]>([]);
   const [certificates, setCertificates] = useState<any[]>([]);
   const [totalXP, setTotalXP] = useState(0);
@@ -82,8 +111,12 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhoto, setEditPhoto] = useState('');
-  const [avatarTab, setAvatarTab] = useState<'emoji' | 'url'>('emoji');
+  const [avatarTab, setAvatarTab] = useState<'emoji' | 'url' | 'upload'>('emoji');
   const [saving, setSaving] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEscapeKey(onClose);
 
@@ -152,17 +185,44 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
     setEditName(profile?.displayName || '');
     setEditPhoto(profile?.photoURL || '');
     setAvatarTab(isEmojiAvatar(profile?.photoURL) ? 'emoji' : 'emoji');
+    setPendingFile(null);
+    setUploadPreview('');
+    setUploadError('');
     setEditMode(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { setUploadError('File troppo grande (max 5MB)'); return; }
+    setPendingFile(file);
+    setUploadError('');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const preview = ev.target?.result as string;
+      setUploadPreview(preview);
+      setEditPhoto(preview);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveEdit = async () => {
     setSaving(true);
+    let photoURL = editPhoto.trim() || profile?.photoURL || '';
+    if (pendingFile && user) {
+      try {
+        photoURL = await uploadAvatarFile(pendingFile, user.id, supabase);
+      } catch {
+        photoURL = uploadPreview || photoURL;
+      }
+    }
     await updateProfile({
       displayName: editName.trim() || profile?.displayName || '',
-      photoURL: editPhoto.trim() || profile?.photoURL || '',
+      photoURL,
     });
     setSaving(false);
     setEditMode(false);
+    setPendingFile(null);
   };
 
   return (
@@ -246,29 +306,35 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
 
                     {/* Avatar picker */}
                     <div>
-                      <label className="text-white/40 text-[10px] font-mono uppercase tracking-wider block mb-2">Avatar</label>
+                      <label className="text-white/40 text-[10px] font-mono uppercase tracking-wider block mb-2">Foto profilo</label>
                       {/* Tabs */}
                       <div className="flex gap-1 mb-3 p-1 bg-zinc-800 rounded-xl w-fit">
                         <button
                           onClick={() => setAvatarTab('emoji')}
                           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${avatarTab === 'emoji' ? 'bg-zinc-600 text-white' : 'text-white/40 hover:text-white'}`}
                         >
-                          <Smile className="w-3 h-3" /> Emoji
+                          <Smile className="w-3 h-3" /> Avatar
+                        </button>
+                        <button
+                          onClick={() => setAvatarTab('upload')}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${avatarTab === 'upload' ? 'bg-zinc-600 text-white' : 'text-white/40 hover:text-white'}`}
+                        >
+                          <Camera className="w-3 h-3" /> Carica foto
                         </button>
                         <button
                           onClick={() => setAvatarTab('url')}
                           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${avatarTab === 'url' ? 'bg-zinc-600 text-white' : 'text-white/40 hover:text-white'}`}
                         >
-                          <ImageIcon className="w-3 h-3" /> URL foto
+                          <ImageIcon className="w-3 h-3" /> URL
                         </button>
                       </div>
 
-                      {avatarTab === 'emoji' ? (
+                      {avatarTab === 'emoji' && (
                         <div className="grid grid-cols-6 gap-2">
                           {EMOJI_AVATARS.map(emoji => (
                             <button
                               key={emoji}
-                              onClick={() => setEditPhoto(emoji)}
+                              onClick={() => { setEditPhoto(emoji); setPendingFile(null); }}
                               className={`aspect-square rounded-xl text-2xl flex items-center justify-center transition-all border-2 ${
                                 editPhoto === emoji
                                   ? 'border-indigo-500 scale-110 shadow-lg shadow-indigo-500/30'
@@ -279,11 +345,41 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
                             </button>
                           ))}
                         </div>
-                      ) : (
+                      )}
+
+                      {avatarTab === 'upload' && (
+                        <div className="flex flex-col items-center gap-3 py-2">
+                          {uploadPreview ? (
+                            <img src={uploadPreview} className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-500/50" alt="Anteprima" />
+                          ) : (
+                            <div className="w-20 h-20 rounded-2xl bg-zinc-800 border-2 border-dashed border-white/20 flex items-center justify-center">
+                              <Camera className="w-7 h-7 text-white/30" />
+                            </div>
+                          )}
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white text-xs font-medium rounded-xl transition-colors"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            {uploadPreview ? 'Cambia immagine' : 'Scegli immagine'}
+                          </button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                          {uploadError && <p className="text-red-400 text-xs">{uploadError}</p>}
+                          <p className="text-white/25 text-xs text-center">JPG, PNG, WebP · max 5MB</p>
+                        </div>
+                      )}
+
+                      {avatarTab === 'url' && (
                         <input
                           type="url"
                           value={isEmojiAvatar(editPhoto) ? '' : editPhoto}
-                          onChange={e => setEditPhoto(e.target.value)}
+                          onChange={e => { setEditPhoto(e.target.value); setPendingFile(null); }}
                           placeholder="https://..."
                           className="w-full bg-zinc-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500/50 placeholder-white/20"
                         />
@@ -346,6 +442,29 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
                 </button>
               )}
             </div>
+
+            {/* Language & settings row */}
+            {!editMode && (
+              <div className="flex items-center justify-between py-3 px-4 bg-zinc-800/50 rounded-2xl border border-white/5">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-white/40" />
+                  <span className="text-sm text-white/60">{lang === 'it' ? 'Lingua' : 'Language'}</span>
+                </div>
+                <div className="flex gap-1 p-0.5 bg-zinc-800 rounded-lg">
+                  {(['it', 'en'] as const).map(l => (
+                    <button
+                      key={l}
+                      onClick={() => setLang(l)}
+                      className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                        lang === l ? 'bg-zinc-600 text-white shadow-sm' : 'text-white/40 hover:text-white'
+                      }`}
+                    >
+                      {l === 'it' ? '🇮🇹 IT' : '🇬🇧 EN'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Study hours chart */}
