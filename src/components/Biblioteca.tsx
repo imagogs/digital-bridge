@@ -774,7 +774,10 @@ interface BibliotecaProps {
 
 export function Biblioteca({ completedLessons, earnedCertificates, onLessonComplete, onOpenProfile }: BibliotecaProps) {
   const { profile } = useAuth();
-  const [activeGroup, setActiveGroup] = useState<Group | null>(null);
+  const [activeGroup, setActiveGroup] = useState<Group | null>(() => {
+    const id = sessionStorage.getItem('db_activeGroup');
+    return id ? GROUPS.find(g => g.id === id) || null : null;
+  });
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
@@ -790,20 +793,26 @@ export function Biblioteca({ completedLessons, earnedCertificates, onLessonCompl
   // Browser back button support
   useEffect(() => {
     const handler = () => {
-      if (activeLesson) setActiveLesson(null);
-      else if (activeGroup) setActiveGroup(null);
+      if (activeLesson) {
+        setActiveLesson(null);
+      } else if (activeGroup) {
+        sessionStorage.removeItem('db_activeGroup');
+        setActiveGroup(null);
+      }
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
   }, [activeLesson, activeGroup]);
 
   const openGroup = (g: Group) => {
+    sessionStorage.setItem('db_activeGroup', g.id);
     window.history.pushState({ db: 'group', id: g.id }, '');
     setTransitioning(true);
     setTimeout(() => { setActiveGroup(g); setTransitioning(false); }, 180);
   };
 
   const closeGroup = () => {
+    sessionStorage.removeItem('db_activeGroup');
     if (window.history.state?.db === 'group') {
       window.history.back();
     } else {

@@ -448,18 +448,19 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Bottom navigation bar — always includes IT/EN toggle */}
+      {/* Bottom navigation bar */}
       {!selectedToolId && (
         <motion.div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30"
+          className="fixed sm:absolute bottom-0 sm:bottom-6 inset-x-0 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 z-30 px-3 sm:px-0"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <div className={`flex items-center gap-1 rounded-2xl p-1.5 ${
+          <div className={`flex items-center gap-0.5 sm:gap-1 rounded-2xl p-1 sm:p-1.5 w-full sm:w-auto ${
             currentSection === 'library'
-              ? 'bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_20px_rgba(29,25,51,0.12)]'
-              : 'bg-[#111111]/95 backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.7)]'
+              ? 'bg-white/95 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_20px_rgba(29,25,51,0.12)]'
+              : 'bg-[#111111] backdrop-blur-xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.7)]'
           }`}>
             {/* Section tabs */}
             {navItems.map(({ id, icon: Icon, label }) => {
@@ -469,8 +470,9 @@ export default function App() {
                 <button
                   key={id}
                   type="button"
+                  data-tour={`nav-${id}`}
                   onClick={() => setCurrentSection(id)}
-                  className={`flex flex-col items-center gap-1 px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer ${
+                  className={`flex-1 sm:flex-none flex flex-col items-center gap-0.5 sm:gap-1 px-1 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all duration-200 cursor-pointer min-w-0 ${
                     isActive
                       ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/25'
                       : isLibrary
@@ -478,14 +480,14 @@ export default function App() {
                       : 'text-white/40 hover:text-white hover:bg-white/[0.06]'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-[10px] font-medium leading-none tracking-wide">{label}</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="text-[9px] sm:text-[10px] font-medium leading-none tracking-wide truncate w-full text-center">{label}</span>
                 </button>
               );
             })}
 
-            {/* Divider */}
-            <div className={`w-px h-7 mx-1 rounded-full ${
+            {/* Divider — desktop only */}
+            <div className={`hidden sm:block w-px h-7 mx-1 rounded-full ${
               currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
             }`} />
 
@@ -495,7 +497,7 @@ export default function App() {
               data-tour="nav-profile"
               onClick={() => setShowProfile(true)}
               title="Profilo & Impostazioni"
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden ${
+              className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden ${
                 currentSection === 'library'
                   ? 'hover:bg-black/[0.05]'
                   : 'hover:bg-white/[0.06]'
@@ -504,12 +506,12 @@ export default function App() {
               <AvatarDisplay
                 photoURL={profile?.photoURL}
                 displayName={profile?.displayName}
-                size={32}
+                size={28}
               />
             </button>
 
-            {/* Divider */}
-            <div className={`w-px h-5 mx-0.5 rounded-full ${
+            {/* Divider — desktop only */}
+            <div className={`hidden sm:block w-px h-5 mx-0.5 rounded-full ${
               currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
             }`} />
 
@@ -519,7 +521,7 @@ export default function App() {
               data-tour="nav-help"
               onClick={() => setShowOnboarding(true)}
               title={t('onb.replayBtn')}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+              className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 currentSection === 'library'
                   ? 'text-[#1d1933]/35 hover:text-[#1d1933] hover:bg-black/[0.05]'
                   : 'text-white/30 hover:text-white hover:bg-white/[0.06]'

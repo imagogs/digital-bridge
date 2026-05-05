@@ -389,6 +389,69 @@ function SofiaIllustration() {
   );
 }
 
+// ── Nav illustration ───────────────────────────────────────────────────────────
+function NavIllustration() {
+  const items = [
+    { icon: '⊞', label: 'Home' },
+    { icon: '📚', label: 'Biblioteca' },
+    { icon: '📈', label: 'Progressi' },
+    { icon: '🎓', label: 'Certificati' },
+  ];
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '16px 24px' }}>
+      {/* Phone frame */}
+      <motion.div
+        initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 24 }}
+        style={{ width: '100%', maxWidth: 260, background: 'rgba(255,255,255,0.04)', borderRadius: 20, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}
+      >
+        {/* Screen area */}
+        <div style={{ height: 72, background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', letterSpacing: '0.2em' }}>CONTENUTO APP</span>
+        </div>
+        {/* Nav bar */}
+        <div style={{ background: 'rgba(20,20,30,0.95)', borderTop: '1px solid rgba(255,255,255,0.07)', padding: '8px 4px', display: 'flex', alignItems: 'center', gap: 2 }}>
+          {items.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 + i * 0.08 }}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                padding: '6px 2px', borderRadius: 10,
+                background: i === 1 ? 'rgba(99,102,241,0.9)' : 'transparent',
+              }}
+            >
+              <span style={{ fontSize: i === 1 ? 13 : 12 }}>{item.icon}</span>
+              <span style={{ fontSize: 7, color: i === 1 ? '#fff' : 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>{item.label}</span>
+            </motion.div>
+          ))}
+          <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)', margin: '0 2px' }} />
+          {/* Profile icon */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
+            style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(99,102,241,0.3)', border: '1px solid rgba(99,102,241,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >
+            <span style={{ fontSize: 13 }}>👤</span>
+          </motion.div>
+          {/* Help icon */}
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65 }}
+            style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >
+            <span style={{ fontSize: 13, opacity: 0.4 }}>❓</span>
+          </motion.div>
+        </div>
+      </motion.div>
+      {/* Arrow pointing down */}
+      <motion.div
+        animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+        style={{ fontSize: 18, opacity: 0.4 }}
+      >↑</motion.div>
+    </div>
+  );
+}
+
 // ── Step config ────────────────────────────────────────────────────────────────
 const STEPS = [
   { key: 'welcome',  accent: '#818cf8', from: '#1a174a', Illustration: WelcomeIllustration  },
@@ -397,6 +460,7 @@ const STEPS = [
   { key: 'progress', accent: '#fb923c', from: '#2d1600', Illustration: ProgressIllustration },
   { key: 'cert',     accent: '#fbbf24', from: '#2a1a00', Illustration: CertIllustration     },
   { key: 'sofia',    accent: '#a78bfa', from: '#1a0b3d', Illustration: SofiaIllustration    },
+  { key: 'nav',      accent: '#6366f1', from: '#0f1040', Illustration: NavIllustration      },
 ] as const;
 
 // ── Language picker (step 0 if no language has been set yet) ──────────────────

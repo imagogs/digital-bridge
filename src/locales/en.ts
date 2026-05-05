@@ -286,6 +286,8 @@ const en = {
   'onb.cert.desc': 'Pass the final exam for each module and earn your official DIGITAL BRIDGE Certificate — recognised on the job market.',
   'onb.sofia.title': 'Sofia, your AI Teacher',
   'onb.sofia.desc': 'At any time you can ask Sofia for help. She explains concepts, answers your questions and guides you step by step.',
+  'onb.nav.title': 'The Navigation Bar',
+  'onb.nav.desc': 'The bar at the bottom is always visible. Use the 4 tabs to move around: Home, Library, Progress and Certifications. The icon on the right opens your profile and settings.',
   'onb.skip': 'Skip',
   'onb.next': 'Next',
   'onb.prev': 'Back',

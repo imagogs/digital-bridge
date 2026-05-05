@@ -286,6 +286,8 @@ const it = {
   'onb.cert.desc': "Supera l'esame finale di ogni modulo e ottieni il tuo Certificato DIGITAL BRIDGE ufficiale — spendibile nel mercato del lavoro.",
   'onb.sofia.title': 'Sofia, la tua Insegnante AI',
   'onb.sofia.desc': 'In qualsiasi momento puoi chiedere aiuto a Sofia. Spiega i concetti, risponde alle domande e ti guida passo dopo passo.',
+  'onb.nav.title': 'La Barra di Navigazione',
+  'onb.nav.desc': 'In basso trovi sempre la barra di navigazione. Usa le 4 sezioni per muoverti nell\'app: Home, Biblioteca, Progressi e Certificazioni. L\'icona a destra apre il tuo profilo e le impostazioni.',
   'onb.skip': 'Salta',
   'onb.next': 'Avanti',
   'onb.prev': 'Indietro',
