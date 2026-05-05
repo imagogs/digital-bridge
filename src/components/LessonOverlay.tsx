@@ -119,14 +119,25 @@ export function LessonOverlay({ lesson, onClose, onComplete }: LessonOverlayProp
       transition={{ duration: 0.4 }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
+      <div className="flex items-center gap-3 mb-4">
+        <button
+          onClick={() => {
+            const isSummary = lesson.screens[screenIndex]?.type === 'summary';
+            if (screenIndex === 0 || isSummary) onClose();
+            else setConfirmExit(prev => !prev);
+          }}
+          className="w-10 h-10 rounded-full glass-panel-dark flex items-center justify-center hover:bg-white/10 transition-colors text-white/50 hover:text-white shrink-0"
+          title="Indietro"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="flex-1 min-w-0">
           <p className="text-white/40 text-xs font-mono tracking-widest uppercase mb-1">
             {t('lesson.label')} {lesson.number} · {lesson.duration}
           </p>
-          <h2 className="font-serif text-2xl text-white">{lesson.title}</h2>
+          <h2 className="font-serif text-2xl text-white truncate">{lesson.title}</h2>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           {xpEarned > 0 && (
             <div className="flex items-center gap-1 px-3 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded-full">
               <Zap className="w-3 h-3 text-yellow-400" />
@@ -145,6 +156,7 @@ export function LessonOverlay({ lesson, onClose, onComplete }: LessonOverlayProp
           </button>
         </div>
       </div>
+
 
       {/* Exit confirmation banner */}
       <AnimatePresence>

@@ -322,7 +322,7 @@ export default function App() {
             key="biblioteca"
             completedLessons={completedLessons}
             earnedCertificates={earnedCertificates}
-            onOpenModule={(id) => { setSelectedToolId(id); }}
+            onLessonComplete={handleLessonComplete}
             onOpenProfile={() => setShowProfile(true)}
           />
         )}

@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getLessonsForModule } from '../data/lessonsManager';
 import { tools } from '../data/tools';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AvatarDisplay } from './ProfileOverlay';
+import { LessonOverlay } from './LessonOverlay';
+import type { Lesson } from '../data/lessons';
 
 // ── Responsive hook ──────────────────────────────────────────────────────────
 function useWindowWidth() {
@@ -339,12 +341,12 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 // ── Group Screen ─────────────────────────────────────────────────────────────
-function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onOpenModule }: {
+function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onStartLesson }: {
   group: Group;
   completedLessons: string[];
   earnedCertificates: string[];
   onClose: () => void;
-  onOpenModule: (id: string) => void;
+  onStartLesson: (lesson: Lesson) => void;
 }) {
   const { t, lang } = useLanguage();
   const width = useWindowWidth();
@@ -384,7 +386,7 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
             color: T.ink, display: 'flex', alignItems: 'center', gap: 6,
             minHeight: 44, whiteSpace: 'nowrap',
           }}>
-          {t('lib.backBtn')}
+          ← {t('lib.backBtn')}
         </button>
         <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.25em', color: T.inkDim, flexShrink: 0 }}>
           {t('lib.roomLabel')} {group.code}
@@ -473,7 +475,7 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
               </div>
             </div>
             <button
-              onClick={() => onOpenModule(tool.id)}
+              onClick={() => onStartLesson(nextLesson)}
               style={{
                 background: T.yellow, color: T.ink, border: 'none',
                 padding: '14px 24px', borderRadius: 999,
@@ -497,28 +499,29 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {lessons.map((lesson, idx) => {
                 const isCompleted = completedLessons.includes(lesson.id);
-                const isCurrent = !isCompleted && idx === done;
+                const isUnlocked = idx === 0 || completedLessons.includes(lessons[idx - 1]?.id);
+                const isClickable = isCompleted || isUnlocked;
                 return (
                   <motion.div
                     key={lesson.id}
                     initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.04 }}
-                    onClick={tool && (isCompleted || isCurrent) ? () => onOpenModule(tool.id) : undefined}
+                    onClick={isClickable ? () => onStartLesson(lesson) : undefined}
                     style={{
                       background: '#fff', borderRadius: 14, padding: '14px 18px',
                       display: 'flex', alignItems: 'center', gap: 12,
                       boxShadow: '0 1px 4px rgba(29,25,51,.05)',
-                      cursor: tool && (isCompleted || isCurrent) ? 'pointer' : 'default',
-                      opacity: idx > done + 2 ? 0.5 : 1,
+                      cursor: isClickable ? 'pointer' : 'default',
+                      opacity: !isClickable ? 0.4 : 1,
                       transition: 'box-shadow .2s', minHeight: 56,
                     }}
                   >
                     <div style={{
                       width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                      background: isCompleted ? T.green : isCurrent ? accent : '#f0ece2',
+                      background: isCompleted ? T.green : isUnlocked ? accent : '#f0ece2',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
                     }}>
-                      {isCompleted ? '✓' : isCurrent ? '▶' : String(idx + 1).padStart(2, '0')}
+                      {isCompleted ? '✓' : isUnlocked ? '▶' : String(idx + 1).padStart(2, '0')}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 500, fontSize: 14, color: T.ink, marginBottom: 2 }}>{lesson.title}</div>
@@ -529,7 +532,7 @@ function GroupScreen({ group, completedLessons, earnedCertificates, onClose, onO
                         {t('lib.completedBadge')}
                       </span>
                     )}
-                    {isCurrent && (
+                    {!isCompleted && isUnlocked && (
                       <span style={{ fontFamily: T.mono, fontSize: 9, letterSpacing: '0.2em', color: accent, background: `${accent}20`, padding: '4px 10px', borderRadius: 999, flexShrink: 0 }}>
                         {t('lib.nextBadge')}
                       </span>
@@ -764,13 +767,15 @@ const ROOM_STYLES = `
 interface BibliotecaProps {
   completedLessons: string[];
   earnedCertificates: string[];
-  onOpenModule: (id: string) => void;
+  onOpenModule?: (id: string) => void;
+  onLessonComplete: (lessonId: string, xp: number) => void;
   onOpenProfile?: () => void;
 }
 
-export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule, onOpenProfile }: BibliotecaProps) {
+export function Biblioteca({ completedLessons, earnedCertificates, onLessonComplete, onOpenProfile }: BibliotecaProps) {
   const { profile } = useAuth();
   const [activeGroup, setActiveGroup] = useState<Group | null>(null);
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [transitioning, setTransitioning] = useState(false);
 
   useMemo(() => {
@@ -782,13 +787,46 @@ export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule,
     }
   }, []);
 
+  // Browser back button support
+  useEffect(() => {
+    const handler = () => {
+      if (activeLesson) setActiveLesson(null);
+      else if (activeGroup) setActiveGroup(null);
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, [activeLesson, activeGroup]);
+
   const openGroup = (g: Group) => {
+    window.history.pushState({ db: 'group', id: g.id }, '');
     setTransitioning(true);
     setTimeout(() => { setActiveGroup(g); setTransitioning(false); }, 180);
   };
+
   const closeGroup = () => {
-    setTransitioning(true);
-    setTimeout(() => { setActiveGroup(null); setTransitioning(false); }, 180);
+    if (window.history.state?.db === 'group') {
+      window.history.back();
+    } else {
+      setActiveGroup(null);
+    }
+  };
+
+  const startLesson = (lesson: Lesson) => {
+    window.history.pushState({ db: 'lesson', id: lesson.id }, '');
+    setActiveLesson(lesson);
+  };
+
+  const closeLesson = () => {
+    if (window.history.state?.db === 'lesson') {
+      window.history.back();
+    } else {
+      setActiveLesson(null);
+    }
+  };
+
+  const handleLessonComplete = () => {
+    if (activeLesson) onLessonComplete(activeLesson.id, activeLesson.xp);
+    closeLesson();
   };
 
   return (
@@ -801,7 +839,22 @@ export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule,
       transition={{ duration: 0.35 }}
     >
       <AnimatePresence mode="wait">
-        {!activeGroup ? (
+        {activeLesson ? (
+          <motion.div
+            key={`lesson-${activeLesson.id}`}
+            className="absolute inset-0 z-20 flex items-center justify-center p-6 sm:p-10 bg-black/80 backdrop-blur-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <LessonOverlay
+              lesson={activeLesson}
+              onClose={closeLesson}
+              onComplete={handleLessonComplete}
+            />
+          </motion.div>
+        ) : !activeGroup ? (
           <motion.div
             key="library-home"
             initial={{ opacity: 0 }}
@@ -830,7 +883,7 @@ export function Biblioteca({ completedLessons, earnedCertificates, onOpenModule,
               completedLessons={completedLessons}
               earnedCertificates={earnedCertificates}
               onClose={closeGroup}
-              onOpenModule={onOpenModule}
+              onStartLesson={startLesson}
             />
           </motion.div>
         )}
