@@ -238,12 +238,23 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
         exit={{ y: 40, scale: 0.95 }}
         className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-zinc-900 border border-white/10 rounded-3xl p-8 shadow-2xl"
       >
-        <button
-          onClick={onClose}
-          className="absolute top-6 right-6 p-2 text-white/40 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="absolute top-6 right-6 flex items-center gap-2">
+          {!editMode && (
+            <button
+              onClick={handleStartEdit}
+              className="p-2 text-white/40 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
+              title="Modifica profilo"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="p-2 text-white/40 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {!user ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -406,18 +417,9 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
                 ) : (
                   /* ── View mode ───────────────────────────────────────────── */
                   <>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h2 className="font-serif text-2xl text-white">{profile?.displayName || user.email}</h2>
-                        <p className="text-white/40 text-sm mt-0.5">{user.email}</p>
-                      </div>
-                      <button
-                        onClick={handleStartEdit}
-                        className="p-2 text-white/30 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors ml-2 shrink-0"
-                        title="Modifica profilo"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
+                    <div>
+                      <h2 className="font-serif text-2xl text-white">{profile?.displayName || user.email}</h2>
+                      <p className="text-white/40 text-sm mt-0.5">{user.email}</p>
                     </div>
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
                       <span className={`text-sm font-medium ${lvl.color}`}>{lvl.label}</span>
