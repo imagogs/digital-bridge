@@ -10,6 +10,7 @@ import { HomeDashboard } from './components/HomeDashboard';
 import { ProgressScreen } from './components/ProgressScreen';
 import { Biblioteca } from './components/Biblioteca';
 import { OnboardingOverlay, hasSeenOnboarding, markOnboardingDone } from './components/OnboardingOverlay';
+import { NavSpotlightTour } from './components/NavSpotlightTour';
 import { useAuth } from './contexts/AuthContext';
 import { useLanguage } from './contexts/LanguageContext';
 import { tools } from './data/tools';
@@ -186,6 +187,7 @@ export default function App() {
   const [showCoordinator, setShowCoordinator] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showNavTour, setShowNavTour] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastStudyDate: null });
 
@@ -427,7 +429,18 @@ export default function App() {
       {/* Onboarding / Tutorial overlay */}
       <AnimatePresence>
         {showOnboarding && (
-          <OnboardingOverlay onClose={() => setShowOnboarding(false)} />
+          <OnboardingOverlay onClose={() => {
+            setShowOnboarding(false);
+            // After onboarding, launch the real nav spotlight tour
+            setTimeout(() => setShowNavTour(true), 350);
+          }} />
+        )}
+      </AnimatePresence>
+
+      {/* Nav spotlight tour — on the real bottom nav bar */}
+      <AnimatePresence>
+        {showNavTour && !selectedToolId && (
+          <NavSpotlightTour onClose={() => setShowNavTour(false)} />
         )}
       </AnimatePresence>
 
@@ -491,16 +504,17 @@ export default function App() {
               currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
             }`} />
 
-            {/* AI Chat button — visually distinct */}
+            {/* Sofia AI chat button — visually distinct gradient pill */}
             <button
               type="button"
               data-tour="nav-chat"
               onClick={() => setShowChat(true)}
               title="Sofia — AI Teacher"
-              className="relative shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer bg-blue-500/20 hover:bg-blue-500/35 text-blue-400 hover:text-blue-300"
+              className="relative shrink-0 flex flex-col items-center justify-center gap-0.5 px-2 sm:px-3 py-1.5 rounded-xl cursor-pointer transition-all duration-200 hover:scale-105 hover:brightness-110"
+              style={{ background: 'linear-gradient(135deg, #6366f1, #3b82f6)', boxShadow: '0 2px 14px rgba(99,102,241,0.45)' }}
             >
-              <MessageSquare className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[6px] font-bold px-[3px] py-[1px] rounded-full leading-tight tracking-wide">AI</span>
+              <MessageSquare className="w-3.5 h-3.5 text-white" />
+              <span className="text-[7px] sm:text-[8px] font-bold text-white/90 leading-none tracking-wide whitespace-nowrap">Sofia AI</span>
             </button>
 
             {/* Profile / Settings icon */}
@@ -527,7 +541,7 @@ export default function App() {
             <button
               type="button"
               data-tour="nav-help"
-              onClick={() => setShowOnboarding(true)}
+              onClick={() => setShowNavTour(true)}
               title={t('onb.replayBtn')}
               className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 currentSection === 'library'

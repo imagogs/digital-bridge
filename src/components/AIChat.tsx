@@ -186,13 +186,14 @@ export function AIChat({ currentModule, open, onClose }: AIChatProps) {
       }]);
       setShowQuickReplies(true);
     } catch (error) {
-      console.error('AI error:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      console.error('Sofia AI error:', errMsg);
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'model',
         content: lang === 'en'
-          ? "Sorry, I had a technical problem. Please try again in a few seconds — I'm always here to help!"
-          : 'Mi dispiace, ho avuto un problema tecnico. Riprova tra qualche secondo — sono sempre qui per aiutarti!',
+          ? `⚠️ Connection error. Check your API key or network.\n\nDetails: ${errMsg}`
+          : `⚠️ Errore di connessione. Verifica la chiave API o la connessione di rete.\n\nDettaglio: ${errMsg}`,
       }]);
       setShowQuickReplies(true);
     } finally {

@@ -113,6 +113,7 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
   const [editPhoto, setEditPhoto] = useState('');
   const [avatarTab, setAvatarTab] = useState<'emoji' | 'url' | 'upload'>('emoji');
   const [saving, setSaving] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState('');
   const [uploadError, setUploadError] = useState('');
@@ -250,11 +251,18 @@ export function ProfileOverlay({ onClose }: { onClose: () => void }) {
           )}
           {!editMode && (
             <button
-              onClick={signOut}
+              onClick={async () => {
+                setLoggingOut(true);
+                try { await signOut(); } catch {}
+                onClose();
+              }}
+              disabled={loggingOut}
               title={t('profile.signOut')}
-              className="p-2 text-white/40 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors"
+              className="p-2 text-white/40 hover:text-red-400 bg-zinc-800 hover:bg-zinc-700 rounded-full transition-colors disabled:opacity-50"
             >
-              <LogOut className="w-4 h-4" />
+              {loggingOut
+                ? <span className="w-4 h-4 block border-2 border-red-400/40 border-t-red-400 rounded-full animate-spin" />
+                : <LogOut className="w-4 h-4" />}
             </button>
           )}
           <button
