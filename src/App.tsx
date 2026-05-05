@@ -1,12 +1,11 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { LayoutDashboard, BookOpen, TrendingUp, GraduationCap, Users, Loader2, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, BookOpen, TrendingUp, GraduationCap, Loader2, HelpCircle, MessageSquare, Settings } from 'lucide-react';
 import { ModuleOverlay } from './components/ModuleOverlay';
 import { AIChat } from './components/AIChat';
-import { ProfileOverlay, AvatarDisplay } from './components/ProfileOverlay';
+import { ProfileOverlay } from './components/ProfileOverlay';
 import { AssessmentOverlay } from './components/AssessmentOverlay';
 import { LoginScreen } from './components/LoginScreen';
-import { LanguageToggle } from './components/LanguageToggle';
 import { HomeDashboard } from './components/HomeDashboard';
 import { ProgressScreen } from './components/ProgressScreen';
 import { Biblioteca } from './components/Biblioteca';
@@ -187,6 +186,7 @@ export default function App() {
   const [showCoordinator, setShowCoordinator] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, longestStreak: 0, lastStudyDate: null });
 
   // Load progress from Supabase
@@ -491,23 +491,34 @@ export default function App() {
               currentSection === 'library' ? 'bg-black/10' : 'bg-white/10'
             }`} />
 
-            {/* Profile icon */}
+            {/* AI Chat button */}
+            <button
+              type="button"
+              data-tour="nav-chat"
+              onClick={() => setShowChat(true)}
+              title="Sofia — AI Teacher"
+              className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
+                currentSection === 'library'
+                  ? 'text-[#1d1933]/50 hover:text-[#1d1933] hover:bg-black/[0.05]'
+                  : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+
+            {/* Profile / Settings icon */}
             <button
               type="button"
               data-tour="nav-profile"
               onClick={() => setShowProfile(true)}
               title="Profilo & Impostazioni"
-              className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer overflow-hidden ${
+              className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer ${
                 currentSection === 'library'
-                  ? 'hover:bg-black/[0.05]'
-                  : 'hover:bg-white/[0.06]'
+                  ? 'text-[#1d1933]/50 hover:text-[#1d1933] hover:bg-black/[0.05]'
+                  : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
               }`}
             >
-              <AvatarDisplay
-                photoURL={profile?.photoURL}
-                displayName={profile?.displayName}
-                size={28}
-              />
+              <Settings className="w-4 h-4" />
             </button>
 
             {/* Divider — desktop only */}
@@ -533,7 +544,7 @@ export default function App() {
         </motion.div>
       )}
 
-      <AIChat currentModule={selectedToolId} />
+      <AIChat currentModule={selectedToolId} open={showChat} onClose={() => setShowChat(false)} />
     </div>
   );
 }

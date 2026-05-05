@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageSquare, X, Send, User, Copy, Check, WifiOff } from 'lucide-react';
+import { X, Send, User, Copy, Check, WifiOff } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -12,6 +12,8 @@ interface Message {
 
 interface AIChatProps {
   currentModule?: string | null;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 const SYSTEM_IT = `Sei Sofia, l'insegnante virtuale di DIGITAL BRIDGE — una piattaforma formativa italiana per adulti che imparano le competenze digitali di base.
@@ -74,7 +76,7 @@ const QUICK_REPLIES_EN: Record<string, string[]> = {
 const STORAGE_KEY = 'sofia_chat';
 const API_KEY = process.env.GEMINI_API_KEY;
 
-export function AIChat({ currentModule }: AIChatProps) {
+export function AIChat({ currentModule, open, onClose }: AIChatProps) {
   const { t, lang } = useLanguage();
 
   const getWelcome = useCallback((): Message => ({
@@ -91,7 +93,9 @@ export function AIChat({ currentModule }: AIChatProps) {
     return [getWelcome()];
   };
 
+  const isControlled = open !== undefined;
   const [isOpen, setIsOpen] = useState(false);
+  const effectiveOpen = isControlled ? open : isOpen;
   const [messages, setMessages] = useState<Message[]>(loadMessages);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -211,22 +215,16 @@ export function AIChat({ currentModule }: AIChatProps) {
 
   const apiAvailable = Boolean(API_KEY);
 
+  const handleClose = () => {
+    if (isControlled) onClose?.();
+    else setIsOpen(false);
+  };
+
   return (
     <>
-      {/* Floating chat button */}
-      <motion.button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-24 right-6 p-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full shadow-lg border border-white/10 transition-all z-50 ${isOpen ? 'pointer-events-none' : ''}`}
-        animate={{ scale: isOpen ? 0 : 1, opacity: isOpen ? 0 : 1 }}
-        transition={{ duration: 0.15 }}
-        aria-label="Apri chat con Sofia"
-      >
-        <MessageSquare className="w-6 h-6" />
-      </motion.button>
-
       {/* Chat window */}
       <AnimatePresence>
-        {isOpen && (
+        {effectiveOpen && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -249,7 +247,7 @@ export function AIChat({ currentModule }: AIChatProps) {
                 </div>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={handleClose}
                 className="text-zinc-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
                 aria-label="Chiudi chat"
               >

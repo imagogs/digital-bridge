@@ -4,7 +4,6 @@ import { getLessonsForModule } from '../data/lessonsManager';
 import { tools } from '../data/tools';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { AvatarDisplay } from './ProfileOverlay';
 import { LessonOverlay } from './LessonOverlay';
 import type { Lesson } from '../data/lessons';
 
@@ -587,9 +586,6 @@ function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profil
   const nextLesson = nextGroup?.toolId
     ? getLessonsForModule(nextGroup.toolId, lang).find(l => !completedLessons.includes(l.id))
     : null;
-  const initials = (profile?.displayName || 'U')
-    .split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('');
-
   const headerPad = isMobile ? '14px 16px' : '24px 40px';
   const heroPad = isMobile ? '20px 16px 16px' : '28px 40px 20px';
   const contentPad = isMobile ? '0 16px' : '0 40px';
@@ -605,41 +601,13 @@ function LibraryHome({ completedLessons, earnedCertificates, onOpenGroup, profil
         <div style={{ fontFamily: T.serif, fontWeight: 600, fontSize: isMobile ? 15 : 18, letterSpacing: '0.18em', color: T.ink }}>
           DIGITAL BRIDGE
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {!isMobile && (
-            <div style={{
-              padding: '7px 14px', background: '#fff', borderRadius: 999, fontSize: 12,
-              fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
-              display: 'flex', alignItems: 'center', gap: 6, color: T.ink,
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
-              {totalXP} XP
-            </div>
-          )}
-          {/* Avatar — always visible, clickable to open profile */}
-          <button
-            type="button"
-            onClick={onOpenProfile}
-            title="Profilo"
-            style={{
-              background: 'none', border: 'none', padding: 0,
-              cursor: onOpenProfile ? 'pointer' : 'default',
-              position: 'relative', flexShrink: 0,
-            }}
-          >
-            <AvatarDisplay
-              photoURL={profile?.photoURL}
-              displayName={profile?.displayName}
-              size={isMobile ? 36 : 42}
-            />
-            {onOpenProfile && (
-              <div style={{
-                position: 'absolute', bottom: -2, right: -2,
-                width: 14, height: 14, borderRadius: '50%',
-                background: T.purple, border: `2px solid ${T.bg}`,
-              }} />
-            )}
-          </button>
+        <div style={{
+          padding: '7px 14px', background: '#fff', borderRadius: 999, fontSize: 12,
+          fontWeight: 500, boxShadow: '0 2px 8px rgba(0,0,0,.05)',
+          display: 'flex', alignItems: 'center', gap: 6, color: T.ink,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.green, display: 'inline-block' }} />
+          {totalXP} XP
         </div>
       </div>
 
